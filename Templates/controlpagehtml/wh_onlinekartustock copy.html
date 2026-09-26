@@ -1,0 +1,214 @@
+{% extends 'base/base.html' %}
+{% block title %}{{ titlePage }}{% endblock %}
+{% block head %}
+{{ super() }}
+<!-- CSS khusus halaman ini -->
+<!-- CSS khusus halaman ini -->
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') }}">
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/datatables-responsive/css/responsive.bootstrap4.min.css') }}">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/select2/css/select2.min.css') }}">
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='adminlte/adminlte.min.css') }}">
+<!-- Load Bootstrap CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.5.6/css/buttons.dataTables.min.css">
+<style>
+  #autocomplete-results {
+    overflow-y: auto;
+    max-height: 300px;
+  }
+
+  #example1 tfoot {
+    display: table-header-group;
+  }
+
+  .modal-dialog.custom {
+    max-width: 1000px;
+  }
+
+  .modal-body {
+    max-height: 670px;
+    overflow-y: auto;
+  }
+</style>
+{% endblock %}
+{% block content %}
+<!--  ------------ ------------ ------------Isi content halaman ini------------ ------------ ------------ -->
+
+<div class="content-wrapper">
+  <!-- Content Header (Page header) -->
+  <section class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-left">
+            <li class="breadcrumb-item"><a href="#">DEPARTEMEN WAREHOUSE</a></li>
+            <li class="breadcrumb-item active">Online Kartu Stock</li>
+          </ol>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-right">
+            <li><a href="#"> Automatic Log out :&nbsp;</a></li>
+            <li><span id="timer">00:00:00</span></li>
+          </ol>
+        </div>
+      </div>
+    </div><!-- /.container-fluid -->
+  </section>
+
+  <!-- Main content -->
+  <section class="content">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h1 class="card-title">Cek Online Data Kartu Stock</h1>
+              <div id="errorAlert" class="btn btn-danger float-right d-none" type="button" data-bs-dismiss="alert"
+                aria-label="Close" role="alert">
+                "Rentang tanggal tidak valid. Tanggal akhir harus setidaknya sama / 1 hari setelah tanggal mulai."
+              </div>
+            </div>
+            <!-- /.card-header -->
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="namaBarang">Nama Barang</label>
+                    <input id="namaBarang" type="text" class="form-control" placeholder="Input Kode / Nama Barang"
+                      autocomplete="off">
+                    <div class="dropdown">
+                      <div id="autocomplete-results" class="dropdown-menu">
+                        <div class="list-group list-group-flush"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-group">
+                    <label for="kodeBarang">Kode Barang</label>
+                    <input id="kodeBarang" type="text" class="form-control" placeholder="" disabled>
+                  </div>
+                </div>
+              </div>
+              <br>
+              <div class="row">
+                <div class="col-2">
+                  <div class="input-group date" id="tanggalAwalDiv" data-target-input="nearest">
+                    <input type="text" class="form-control datetimepicker-input" id="tanggalAwal" name="tanggalAwal"
+                      data-target="#tanggalAwalDiv" autocomplete="off" />
+                    <div class="input-group-append" data-target="#tanggalAwalDiv" data-toggle="datetimepicker">
+                      <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-2">
+                  <div class="input-group date" id="tanggalAkhirDiv" data-target-input="nearest">
+                    <input type="text" class="form-control datetimepicker-input" id="tanggalAkhir" name="tanggalAkhir"
+                      data-target="#tanggalAkhirDiv" autocomplete="off" />
+                    <div class="input-group-append" data-target="#tanggalAkhirDiv" data-toggle="datetimepicker">
+                      <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+              <br>
+              <div class="row">
+                <div class="col-2">
+                  <button type="button" id="btnSubmit" class="btn btn-secondary">
+                    Proses Data
+                  </button>
+                </div>
+                <div class="col-2 ml-auto">
+                  <button type="button" id="btnExcel" class="btn btn-success">
+                    Export Excel
+                  </button>
+                </div>
+              </div>
+              <br>
+              <br>
+              <table id="example1" class="table table-bordered dt-responsive" style="width:100%">
+                <thead>
+                  <tr>
+                    <th style="text-align:center; font-size: 16px; font-weight: bold; background-color: #a09c9c;"
+                      id="col-no">NO</th>
+                    <th style="text-align:center; font-size: 16px; font-weight: bold; background-color: #a09c9c;"
+                      id="col-tanggal">TANGGAL</th>
+                    <th style="text-align:center; font-size: 16px; font-weight: bold; background-color: #a09c9c;"
+                      id="col-noref">NO BON / REFERENSI</th>
+                    <th style="text-align:center; font-size: 16px; font-weight: bold; background-color: #a09c9c;"
+                      id="col-kode">KODE BARANG</th>
+                    <th style="text-align:center; font-size: 16px; font-weight: bold; background-color: #a09c9c;"
+                      style="width: 300px;" id="col-keterangan">KETERANGAN</th>
+                    <th style="text-align:center; font-size: 16px; font-weight: bold; background-color: #a09c9c;"
+                      id="col-qty-in">QTY IN</th>
+                    <th style="text-align:center; font-size: 16px; font-weight: bold; background-color: #a09c9c;"
+                      id="col-qty-out">QTY OUT</th>
+                    <th style="text-align:center; font-size: 16px; font-weight: bold; background-color: #a09c9c;"
+                      id="col-saldo">SALDO</th>
+                    <th style="text-align:center; font-size: 16px; font-weight: bold; background-color: #a09c9c;"
+                      id="col-unit">UNIT</th>
+                    <th style="text-align:center; font-size: 16px; font-weight: bold; background-color: #a09c9c;"
+                      id="col-kategori">KATEGORI BARANG</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Data rows will be inserted here by your code -->
+                </tbody>
+                <tfoot style="display: none;">
+                  <tr>
+                    <th colspan="5"
+                      style="text-align:center; font-size: 16px; font-weight: bold; background-color: #cac9c9;">Total
+                    </th>
+                    <th style="text-align:center; font-size: 16px; font-weight: bold; background-color: #cac9c9;"></th>
+                    <th style="text-align:center; font-size: 16px; font-weight: bold; background-color: #cac9c9;"></th>
+                    <th style="text-align:center; font-size: 16px; font-weight: bold; background-color: #cac9c9;"></th>
+                    <th style="text-align:center; font-size: 16px; font-weight: bold; background-color: #cac9c9;"></th>
+                    <th style="text-align:center; font-size: 16px; font-weight: bold; background-color: #cac9c9;"></th>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <!-- /.card-body -->
+          </div>
+          <!-- /.card -->
+        </div>
+        <!-- /.col -->
+      </div>
+      <!-- /.row -->
+    </div>
+    <!-- /.container-fluid -->
+  </section>
+  <!-- /.content -->
+</div>
+<!-- /.content-wrapper -->
+
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<!-- All JavaScript khusus halaman ini -->
+<script src="{{ url_for('static', filename='plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables/jquery.dataTables.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
+<script
+  src="{{ url_for('static', filename='plugins/datatables-responsive/js/dataTables.responsive.min.js') }}"></script>
+<script
+  src="{{ url_for('static', filename='plugins/datatables-responsive/js/responsive.bootstrap4.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-buttons/js/dataTables.buttons.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.html5.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/select2/js/select2.min.js') }}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.5.6/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.html5.min.js"></script>
+<script src="{{ url_for('static', filename='plugins/moment/moment.min.js') }}"></script>
+<script
+  src="{{ url_for('static', filename='plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js') }}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.4/xlsx.full.min.js"></script>
+<script src="{{ url_for('send_js', path='wh_onlinekartustock.js') }}"></script>
+{% endblock %}

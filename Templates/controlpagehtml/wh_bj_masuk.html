@@ -1,0 +1,533 @@
+{% extends 'base/base.html' %}
+{% block title %}{{ titlePage }}{% endblock %}
+{% block head %}
+{{ super() }}
+<!-- CSS khusus halaman ini -->
+<!-- DataTables -->
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') }}">
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/datatables-responsive/css/responsive.bootstrap4.min.css') }}">
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/datatables-buttons/css/buttons.bootstrap4.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/select2/css/select2.min.css') }}">
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='adminlte/adminlte.min.css') }}">
+
+<!-- Load Bootstrap CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+
+<!-- Datetimepicker -->
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css') }}">
+
+<!-- Custom CSS Datatable -->
+<style>
+  #example1 td:nth-child(0),
+  #example1 td:nth-child(1),
+  #example1 td:nth-child(2),
+  #example1 td:nth-child(3),
+  #example1 td:nth-child(4),
+  #example1 td:nth-child(5) {
+    white-space: nowrap;
+  }
+
+  #example2 td:nth-child(12) {
+    white-space: nowrap;
+  }
+
+  .modal-dialog.custom {
+    max-width: 1900px;
+  }
+
+  .modal-body {
+    max-width: 1900px;
+    overflow-x: auto;
+  }
+
+  /* CSS untuk elemen form dengan dropdown */
+  .item-row {
+    display: flex;
+    flex-direction: column;
+  }
+</style>
+
+
+{% endblock %}
+{% block content %}
+<!--  ------------ ------------ ------------Isi content halaman ini------------ ------------ ------------ -->
+
+<div class="content-wrapper">
+  <!-- Content Header (Page header) -->
+  <section class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-left">
+            <li class="breadcrumb-item"><a href="#">WAREHOUSE BARANG JADI</a></li>
+            <li class="breadcrumb-item active">Mutasi Barang Jadi Masuk</li>
+          </ol>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-right">
+            <li><a href="#"> Automatic Log out :&nbsp;</a></li>
+            <li><span id="timer">00:00:00</span></li>
+          </ol>
+        </div>
+      </div>
+    </div><!-- /.container-fluid -->
+  </section>
+
+  <!-- Main content -->
+  <section class="content">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Data Mutasi Barang Jadi Masuk</h2>
+              <button type="button" class="btn btn-secondary float-right" data-toggle="modal"
+                data-target="#formModalInvoice">
+                Bulk Invoice </button>
+              <button type="button" class="btn btn-primary float-right" data-toggle="modal" data-target="#formModal"
+                style="margin-right: 20px;">
+                Tambah Data </button>
+              <button type="button" id="btnRefresh" class="btn btn-success float-right" style="margin-right: 20px;">
+                Refresh
+              </button>
+              <!-- <button type="button" onclick="showAlert()" class="btn btn-primary">Tampilkan Alert</button> -->
+
+            </div>
+            <!-- /.card-header -->
+            <div class="card-body">
+              <div class="row">
+                <div class="col-2">
+                  <label>Tanggal Mulai</label>
+                  <input id="tanggalAwal" type="date" class="form-control form-control" placeholder="">
+                </div>
+                <div class="col-2">
+                  <label>Tanggal Akhir</label>
+                  <input id="tanggalAkhir" type="date" class="form-control form-control" placeholder="">
+                </div>
+                <div class="col-8 text-right" style="margin-top: 30px;">
+                  <!-- Tombol Download Excel 
+                  <button id="downloadExcel" class="btn btn-success float-right">Download Excel</button> -->
+              </div>
+              </div>
+              <br>
+                  <table id="bj_masuk" class="table table-bordered dt-responsive" style="width:100%">
+                    <thead>
+                      <tr>
+                        <th style="text-align: center; vertical-align: middle;">ID</th>
+                        <th style="text-align: center; vertical-align: middle;">TGL MASUK</th>
+                        <th style="text-align: center; vertical-align: middle;">KODE BARANG</th>
+                        <th style="text-align: center; vertical-align: middle;">NAMA BARANG</th>
+                        <th style="text-align: center; vertical-align: middle;">NOMOR BATCH</th>
+                        <th style="text-align: center; vertical-align: middle;">GRADE</th>
+                        <th style="text-align: center; vertical-align: middle;">Jumlah</th>
+                        <th style="text-align: center; vertical-align: middle;">Total</th>
+                        <th style="text-align: center; vertical-align: middle;">KEMASAN</th>
+                        <th style="text-align: center; vertical-align: middle;">NOMOR SLIP</th>
+                        <th style="width: 80px; justify-content: center; text-align: center;">AKSI</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+
+                      <!-- Data lainnya untuk Table 1 -->
+                    </tbody>
+                  </table>
+            </div>
+            <!-- /.card-body -->
+          </div>
+          <!-- /.card -->
+        </div>
+        <!-- /.col -->
+      </div>
+      <!-- /.row -->
+    </div>
+    <!-- /.container-fluid -->
+  </section>
+  <!-- /.content -->
+</div>
+<!-- /.content-wrapper -->
+
+<!-- Modal Denied Edit and Delete -->
+<div class="modal fade" id="deniedModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deniedModalLabel">Hapus Data</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Pesan akan diinput disini-->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Ok</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Bulk Invoice-->
+<div class="modal fade" id="formModalInvoice" tabindex="-1" role="dialog" aria-labelledby="tambahModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered custom" role="document" style="max-width: 500px;">
+    <!-- Set max-width to your desired value -->
+    <div class="modal-content">
+      <div class="modal-header bg-secondary text-white">
+        <h5 class="modal-title">Buat Invoice Sekaligus</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <form id="form-invoiceKeluar-data" class="needs-validation" novalidate>
+        <div class="row mt-3 mb-3">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="startDate" class="text-right">Start Date:</label>
+              <input type="date" id="startDate" class="form-control">
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="endDate" class="text-left">End Date:</label>
+              <input type="date" id="endDate" class="form-control">
+            </div>
+          </div>
+        </div>
+        <div class="text-center mb-3">
+          <button type="submit" class="btn btn-secondary">Proses</button>
+          <br>
+          <div id="loading-indicator" class="d-none" style="margin-top: 10px;">
+            <div class="spinner-border text-primary" role="status">
+              <span class="sr-only">Loading...</span>
+            </div>
+          </div>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal Tambah-->
+<div class="modal fade" id="formModal" tabindex="-1" role="dialog" aria-labelledby="tambahModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered custom" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="KeluarModalLabel">Form Input Data Masuk</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <form id="form-Keluar-data" class="needs-validation" novalidate>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-auto">
+              <div class="form-group">
+                <label>Tanggal Masuk :</label>
+                <div class="input-group date" id="tanggalkeluarbarangDiv" data-target-input="nearest">
+                  <input type="text" class="form-control datetimepicker-input" id="tanggalkeluarBarang"
+                    name="tanggalkeluarBarang" data-target="#tanggalkeluarbarangDiv" autocomplete="off" />
+                  <div class="input-group-append" data-target="#tanggalkeluarbarangDiv" data-toggle="datetimepicker">
+                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col">
+              <div class="row">
+                <div class="form-group">
+                  <label for="depannomorbonKeluar">Nomor Bon / Referensi :</label>
+                  <div class="d-flex">
+                    <input type="text" class="form-control col-12" id="depannomorbonKeluar" style="text-align: left;"
+                      placeholder="" required>
+                    <!--
+                      <input type="text" class="form-control col-4" id="isinomorbonKeluar" style="text-align: left;"
+                      placeholder="" autocomplete="off" required> -->
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <label>Terima Dari :</label>
+              <select id="departmentKeluar" name="departmentKeluar" class="form-control select2"
+                style="width: 100%;">
+                <option selected disabled value=""></option>
+                <option>PACKING</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="catatanBonkeluar">Catatan :</label>
+                <div class="d-flex">
+                  <textarea class="form-control" id="catatanBonkeluar" rows="2"></textarea>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3"></div>
+          </div>
+
+          <div id="containerfluid" class="scrolling-wrapper container-fluid" style="overflow-x: auto;">
+
+          </div>
+          <!-- Tombol Keluar Item -->
+          <br>
+          <div class="col-md-12">
+            <button type="button" id="tambahItemBtnKeluar" class="btn btn-primary">Tambah Item</button>
+          </div>
+          <br>
+          <div id="pesanAlert" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong></strong>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+            <button type="submit" class="btn btn-primary">
+              <i class="fab fa-telegram"></i> Tambah
+            </button>
+          </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal edit -->
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered custom" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title" id="editModalLabel">Edit Data</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="form-Edit-data" class="needs-validation" novalidate>
+          <div class="row">
+            <div class="col-md-11">
+              <div class="form-group">
+                <input type="hidden" id="originalData" name="originalData" value="">
+                <input type="hidden" class="form-control idEdit" id="idEdit">
+                <label for="pemohonEdit">Nama Peminjam :</label>
+                <input type="text" class="form-control" id="namapeminjamEdit" name="namapeminjamEdit"
+                  placeholder="Masukkan Nama Peminjam" required autocomplete="off">
+                <div class="invalid-feedback inv-namapeminjamEdit-0">
+                  Nama peminjam harus diisi.
+                </div>
+                <div class="valid-feedback namapeminjamEdit">
+                  Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="deptEdit">Dept:</label>
+                <input type="text" class="form-control deptEdit" id="deptEdit" name="deptEdit"
+                  placeholder="Masukkan Dept anda" required autocomplete="off">
+                <div class="invalid-feedback inv-deptEdit-0">
+                  Dept harus diisi.
+                </div>
+                <div class="invalid-feedback inv-deptEdit-1">
+                  Maksimal 5 Karakter.
+                </div>
+                <div class="valid-feedback deptEdit">
+                  Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Tanggal Pinjam :</label>
+                <div class="input-group date" id="tanggalpinjamEditDiv" data-target-input="nearest">
+                  <input type="text" class="form-control datetimepicker-input" id="tanggalpinjamEdit"
+                    name="tanggalpinjamEdit" data-target="#tanggalpinjamEditDiv" />
+                  <div class="input-group-append" data-target="#tanggalpinjamEditDiv" data-toggle="datetimepicker">
+                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                  </div>
+                  <div class="invalid-feedback inv-tanggalpinjamEdit-0">
+                    Harus diisi.
+                  </div>
+                  <div class="valid-feedback tanggalpinjamEdit">
+                    Valid!
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-12">
+              <div class="form-group">
+                <label for="penyebabEdit">Barang Yang Dipinjam :</label>
+                <textarea class="form-control barangyangdipinjamEdit" id="barangyangdipinjamEdit"
+                  placeholder="Masukkan barang apa saja yang dipinjam" required></textarea>
+                <div class="invalid-feedback inv-barangyangdipinjamEdit-0">
+                  Penyebab harus diisi.
+                </div>
+                <div class="valid-feedback barangyangdipinjamEdit">
+                  Valid!
+                </div>
+              </div>
+            </div>
+            <div class="col-md-11">
+              <div class="form-group">
+                <label for="dipinjamkanolehEdit">Dipinjamkan Oleh :</label>
+                <select id="dipinjamkanolehEdit" class="form-control dipinjamkanolehEdit" required>
+                  <option selected disabled value=""></option>
+                  <option>Yuswara Hadi</option>
+                  <option>Lutfi Widianto</option>
+                </select>
+                <div class="invalid-feedback inv-dipinjamkanolehEdit-0">
+                  Harus diisi.
+                </div>
+                <div class="valid-feedback dipinjamkanolehEdit">
+                  Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Tanggal Kembali :</label>
+                <div class="input-group date" id="tanggalkembaliEditDiv" data-target-input="nearest">
+                  <input type="text" class="form-control datetimepicker-input" id="tanggalkembaliEdit"
+                    name="tanggalkembaliEdit" data-target="#tanggalkembaliEditDiv" />
+                  <div class="input-group-append" data-target="#tanggalkembaliEditDiv" data-toggle="datetimepicker">
+                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-12">
+              <div class="form-group">
+                <label for="barangyangkembaliEdit">Barang Yang kembali :</label>
+                <textarea class="form-control barangyangkembaliEdit" id="barangyangkembaliEdit"
+                  placeholder="Masukkan barang apa saja yang sudah dikembalikan" required></textarea>
+                <div class="invalid-feedback inv-barangyangkembaliEdit-0">
+                  Barang yang kembali harus diisi.
+                </div>
+                <div class="valid-feedback barangyangkembaliEdit">
+                  Valid!
+                </div>
+              </div>
+            </div>
+            <div class="col-md-11">
+              <div class="form-group">
+                <label for="dikembalikankeEdit">Dikembalikan Ke :</label>
+                <select id="dikembalikankeEdit" class="form-control dikembalikankeEdit" required>
+                  <option selected disabled value=""></option>
+                  <option>Yuswara Hadi</option>
+                  <option>Lutfi Widianto</option>
+                </select>
+                <div class="invalid-feedback inv-dikembalikankeEdit-0">
+                  Harus diisi.
+                </div>
+                <div class="valid-feedback dikembalikankeEdit">
+                  Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="inputState statusEdit">Status :</label>
+                <select id="statusEdit" class="form-control statusEdit" required>
+                  <option selected value="Masih Dipinjam">Masih Dipinjam</option>
+                  <option>Sudah Dikembalikan</option>
+                </select>
+                <div class="invalid-feedback inv-statusEdit-0">
+                  Status harus diisi.
+                </div>
+                <div class="valid-feedback statusEdit">
+                  Valid!
+                </div>
+              </div>
+            </div>
+            <div class="col-md-12">
+              <div class="form-group">
+                <label for="penyebabEdit">Keterangan :</label>
+                <textarea class="form-control keteranganEdit" id="keteranganEdit"
+                  placeholder="Masukkan barang apa saja yang sudah dikembalikan" required></textarea>
+                <div class="invalid-feedback inv-keteranganEdit-0">
+                  Penyebab harus diisi.
+                </div>
+                <div class="valid-feedback keteranganEdit">
+                  Valid!
+                </div>
+              </div>
+            </div>
+          </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="sumbit" class="btn btn-warning">Simpan Perubahan</button>
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal Delete -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteModalLabel">Hapus Data</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Pesan akan diinput disini-->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-danger btn-confirm-delete">Hapus</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Alert-->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="false"
+  style="position: fixed; top: 0; right: 0; margin: 0; transform: translate(0, 0); pointer-events: none;">
+  <div class="modal-dialog modal-sm" role="document"
+    style="margin-top: 10px; margin-right: 25px; pointer-events: auto;">
+    <div class="modal-content" style="background-color: white; border-radius: 0; pointer-events: auto;">
+      <div class="alert d-flex align-items-center" role="alert" style="border-radius: 0; margin: 0;">
+        <i class="fas fa-check-circle mr-2"></i> <span id="message">Dokumen berhasil dibuat.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<!-- All JavaScript khusus halaman ini -->
+<!-- Bootstrap 4 -->
+<script src="{{ url_for('static', filename='plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+
+<!-- DataTables & Plugins -->
+<script src="{{ url_for('static', filename='plugins/datatables/jquery.dataTables.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-responsive/js/dataTables.responsive.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-responsive/js/responsive.bootstrap4.min.js') }}"></script>
+
+<!-- DataTables Buttons -->
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.colVis.min.js"></script>
+<script src="{{ url_for('static', filename='plugins/jszip/jszip.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.html5.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/select2/js/select2.min.js') }}"></script>
+
+<!-- Date-range-picker -->
+<script src="{{ url_for('static', filename='plugins/moment/moment.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js') }}"></script>
+
+<!-- Control Full Page Khusus Permintaan IT -->
+<script src="{{ url_for('send_js', path='wh_mutasibjmasuk.js') }}"></script>
+
+{% endblock %}

@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>Formulir Pengecekan Kendaraan</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+  <style>
+    .bold-label {
+      font-weight: bold !important;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container mt-4">
+    <h2 class="text-center mb-4">Formulir Pengecekan Kendaraan</h2>
+    <form>
+      <div class="form-group">
+        <label for="tanggal">1. Tanggal Pemeriksaan</label>
+        <input type="date" class="form-control" id="tanggal">
+      </div>
+
+      <div class="form-group">
+        <label for="platNomer">2. Plat Nomer</label>
+        <input type="text" class="form-control" id="platNomer" placeholder="Contoh: B 1234 CD" autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label for="namaSupir">3. Nama Supir</label>
+        <input type="text" class="form-control" id="namaSupir" placeholder="Masukkan nama supir" autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label for="nomerSeal">4. Nomer Seal</label>
+        <input type="text" class="form-control" id="nomerSeal" placeholder="" autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label for="namaSupplier">5. Nama Supplier</label>
+        <input type="text" class="form-control" id="namaSupplier" placeholder="Masukkan nama supplier"
+          autocomplete="off">
+      </div>
+
+      <div class="form-group">
+        <label>6. Pengecekan Kondisi Kendaraan</label>
+        <table class="table table-striped table-bordered nowrap">
+          <thead>
+            <tr>
+              <th>6.1 Inside </th>
+              <th>Baik</th>
+              <th>Rusak</th>
+              <th>Keterangan</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <!-- Item 6.1.1 -->
+            <tr>
+              <td class="col-5">
+                <div class="form-check">
+                  <label class="form-check-label" for="insideCheck">6.1.1 Tidak ada kebocoran</label>
+                </div>
+              </td>
+              <td class="col-1">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="yaCheck1"
+                    onchange="toggleKeterangan('insideKeterangan1', this)">
+                  <label class="form-check-label" for="yaCheck1">Baik</label>
+                </div>
+              </td>
+              <td class="col-1">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="tidakCheck1"
+                    onchange="toggleKeterangan('insideKeterangan1', this)">
+                  <label class="form-check-label" for="tidakCheck1">Rusak</label>
+                </div>
+              </td>
+              <td class="col-5">
+                <input type="text" class="form-control" id="insideKeterangan1" placeholder="Keterangan">
+              </td>
+            </tr>
+
+            <!-- Item 6.1.2 -->
+            <tr>
+              <td class="col-5">
+                <div class="form-check">
+                  <label class="form-check-label" for="insideCheck">6.1.2 Tidak ada bau</label>
+                </div>
+              </td>
+              <td class="col-1">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="yaCheck2"
+                    onchange="toggleKeterangan('insideKeterangan2', this)">
+                  <label class="form-check-label" for="yaCheck2">Baik</label>
+                </div>
+              </td>
+              <td class="col-1">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="tidakCheck2"
+                    onchange="toggleKeterangan('insideKeterangan2', this)">
+                  <label class="form-check-label" for="tidakCheck2">Rusak</label>
+                </div>
+              </td>
+              <td class="col-5">
+                <input type="text" class="form-control" id="insideKeterangan2" placeholder="Keterangan">
+              </td>
+            </tr>
+
+            <!-- Item 6.1.3 -->
+            <tr>
+              <td class="col-5">
+                <div class="form-check">
+                  <label class="form-check-label" for="insideCheck">6.1.3 Tidak ada kotoran</label>
+                </div>
+              </td>
+              <td class="col-1">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="yaCheck3"
+                    onchange="toggleKeterangan('insideKeterangan3', this)">
+                  <label class="form-check-label" for="yaCheck3">Baik</label>
+                </div>
+              </td>
+              <td class="col-1">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="tidakCheck3"
+                    onchange="toggleKeterangan('insideKeterangan3', this)">
+                  <label class="form-check-label" for="tidakCheck3">Rusak</label>
+                </div>
+              </td>
+              <td class="col-5">
+                <input type="text" class="form-control" id="insideKeterangan3" placeholder="Keterangan">
+              </td>
+            </tr>
+
+            <!-- item 6.1.4 -->
+            <tr>
+              <td class="col-5">
+                <div class="form-check">
+                  <label class="form-check-label" for="insideCheck">6.1.4 Tidak ada serangga</label>
+                </div>
+              </td>
+              <td class="col-1">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="yaCheck4"
+                    onchange="toggleKeterangan('insideKeterangan4', this)">
+                  <label class="form-check-label" for="yaCheck4">Baik</label>
+                </div>
+              </td>
+              <td class="col-1">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="tidakCheck4"
+                    onchange="toggleKeterangan('insideKeterangan4', this)">
+                  <label class="form-check-label" for="tidakCheck4">Rusak</label>
+                </div>
+              </td>
+              <td class="col-5">
+                <input type="text" class="form-control" id="insideKeterangan4" placeholder="Keterangan">
+              </td>
+            </tr>
+
+            <!-- item 6.1.5 -->
+            <tr>
+              <td class="col-5">
+                <div class="form-check">
+                  <label class="form-check-label" for="insideCheck">6.1.5 Tidak ada Najis dan barang haram</label>
+                </div>
+              </td>
+              <td class="col-1">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="yaCheck5"
+                    onchange="toggleKeterangan('insideKeterangan5', this)">
+                  <label class="form-check-label" for="yaCheck5">Baik</label>
+                </div>
+              </td>
+              <td class="col-1">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="tidakCheck5"
+                    onchange="toggleKeterangan('insideKeterangan5', this)">
+                  <label class="form-check-label" for="tidakCheck5">Rusak</label>
+                </div>
+              </td>
+              <td class="col-5">
+                <input type="text" class="form-control" id="insideKeterangan5" placeholder="Keterangan">
+              </td>
+            </tr>
+
+            <!-- untuk item 6.2 -->
+            <tr>
+              <td class="col-5">
+                <label class="form-check-label bold-label" for="insideCheck">6.2 Door (Segel kendaraan)</label>
+              </td>
+              <td class="col-1">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="yaCheck6"
+                    onchange="toggleKeterangan('insideKeterangan6', this)">
+                  <label class="form-check-label" for="yaCheck6">Baik</label>
+                </div>
+              </td>
+              <td class="col-1">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="tidakCheck6"
+                    onchange="toggleKeterangan('insideKeterangan6', this)">
+                  <label class="form-check-label" for="tidakCheck6">Rusak</label>
+                </div>
+              </td>
+              <td class="col-5">
+                <input type="text" class="form-control" id="insideKeterangan6" placeholder="Keterangan">
+              </td>
+            </tr>
+
+            <!-- untuk item 6.3 -->
+            <tr>
+              <td class="col-5">
+                <label class="form-check-label bold-label" for="insideCheck">6.3 Front side (Sisi depan)</label>
+              </td>
+              <td class="col-1">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="yaCheck7"
+                    onchange="toggleKeterangan('insideKeterangan7', this)">
+                  <label class="form-check-label" for="yaCheck7">Baik</label>
+                </div>
+              </td>
+              <td class="col-1">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="tidakCheck7"
+                    onchange="toggleKeterangan('insideKeterangan7', this)">
+                  <label class="form-check-label" for="tidakCheck7">Rusak</label>
+                </div>
+              </td>
+              <td class="col-5">
+                <input type="text" class="form-control" id="insideKeterangan7" placeholder="Keterangan">
+              </td>
+            </tr>
+
+            <!-- untuk item 6.4 -->
+            <tr>
+              <td class="col-5">
+                <label class="form-check-label bold-label" for="insideCheck">6.4 Roof (Sisi atas dan segel )</label>
+              </td>
+              <td class="col-1">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="yaCheck8"
+                    onchange="toggleKeterangan('insideKeterangan8', this)">
+                  <label class="form-check-label" for="yaCheck8">Baik</label>
+                </div>
+              </td>
+              <td class="col-1">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="tidakCheck8"
+                    onchange="toggleKeterangan('insideKeterangan8', this)">
+                  <label class="form-check-label" for="tidakCheck8">Rusak</label>
+                </div>
+              </td>
+              <td class="col-5">
+                <input type="text" class="form-control" id="insideKeterangan8" placeholder="Keterangan">
+              </td>
+            </tr>
+
+            <!-- untuk item 6.5 -->
+            <tr>
+              <td class="col-5">
+                <label class="form-check-label bold-label" for="insideCheck">6.5 Back Side (Sisi belakang, segel dan
+                  outlet)</label>
+              </td>
+              <td class="col-1">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="yaCheck9"
+                    onchange="toggleKeterangan('insideKeterangan9', this)">
+                  <label class="form-check-label" for="yaCheck9">Baik</label>
+                </div>
+              </td>
+              <td class="col-1">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="tidakCheck9"
+                    onchange="toggleKeterangan('insideKeterangan9', this)">
+                  <label class="form-check-label" for="tidakCheck9">Rusak</label>
+                </div>
+              </td>
+              <td class="col-5">
+                <input type="text" class="form-control" id="insideKeterangan9" placeholder="Keterangan">
+              </td>
+            </tr>
+
+            <!-- untuk item 6.6 -->
+            <tr>
+              <td class="col-5">
+                <label class="form-check-label bold-label" for="insideCheck">6.6 Bottom (Sisi bawah)</label>
+              </td>
+              <td class="col-1">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="yaCheck10"
+                    onchange="toggleKeterangan('insideKeterangan10', this)">
+                  <label class="form-check-label" for="yaCheck10">Baik</label>
+                </div>
+              </td>
+              <td class="col-1">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="tidakCheck10"
+                    onchange="toggleKeterangan('insideKeterangan10', this)">
+                  <label class="form-check-label" for="tidakCheck10">Rusak</label>
+                </div>
+              </td>
+              <td class="col-5">
+                <input type="text" class="form-control" id="insideKeterangan10" placeholder="Keterangan"
+                  autocomplete="off">
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="form-group">
+        <label for="pic">PIC</label>
+        <input type="text" class="form-control" id="pic" value="{{ username }}" disabled>
+      </div>
+
+      <div class="form-group">
+        <label for="catatan">Catatan</label>
+        <textarea class="form-control" id="catatan" placeholder="Masukkan catatan"></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+  <script>
+    $('#example').DataTable({
+      responsive: true
+    });
+
+    toastr.options = {
+      closeButton: true,
+      progressBar: true,
+      positionClass: 'toast-top-right',
+      timeOut: 5000,
+    };
+    toastr.success('Halaman berhasil dimuat');
+    function toggleKeterangan(keteranganId, checkbox) {
+      var keteranganInput = document.getElementById(keteranganId);
+      var baikCheckbox = document.getElementById("ya" + checkbox.id.substring(2));
+      var rusakCheckbox = document.getElementById("tidak" + checkbox.id.substring(2));
+
+      if (checkbox.checked) {
+        baikCheckbox.checked = checkbox.id.startsWith("ya");
+        rusakCheckbox.checked = checkbox.id.startsWith("tidak");
+
+        baikCheckbox.disabled = checkbox.id.startsWith("tidak");
+        rusakCheckbox.disabled = checkbox.id.startsWith("ya");
+
+        keteranganInput.disabled = checkbox.id.startsWith("ya");
+        keteranganInput.value = "";  // Menetapkan nilai keterangan menjadi kosong jika "Baik" dipilih
+      } else {
+        baikCheckbox.disabled = false;
+        rusakCheckbox.disabled = false;
+        keteranganInput.disabled = false;
+      }
+    }
+
+    document.querySelector('form').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      // Mengumpulkan data formulir
+      var formData = {
+        // Menambahkan properti tanggalSubmit dan jamSubmit
+        tanggalSubmit: new Date().toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        }) + ' ' + new Date().toLocaleTimeString('en-ID'),
+
+        tanggal: document.getElementById('tanggal').value,
+        platNomer: document.getElementById('platNomer').value,
+        namaSupir: document.getElementById('namaSupir').value,
+        nomerSeal: document.getElementById('nomerSeal').value,
+        namaSupplier: document.getElementById('namaSupplier').value,
+        inside: '✔',
+        pengecekanKondisi: [],
+        pic: document.getElementById('pic').value,
+        catatan: document.getElementById('catatan').value
+      };
+
+      // Mengumpulkan data pengecekan kondisi
+      for (var i = 1; i <= 10; i++) {
+        var item = {
+          itemNumber: i,
+          baik: document.getElementById('yaCheck' + i).checked ? '✔' : '',
+          rusak: document.getElementById('tidakCheck' + i).checked ? '✔' : '',
+          keterangan: document.getElementById('insideKeterangan' + i).value
+        };
+        formData.pengecekanKondisi.push(item);
+      }
+
+      // Menampilkan data JSON yang akan dikirim
+      console.log('Data JSON yang akan dikirim:', formData);
+
+      // Mengirim data JSON ke server (menggunakan Fetch API)
+      fetch('https://script.google.com/macros/s/AKfycbxRg_-9suxqA63xY8n6e8whNvphxgxPafliQ686Swc-IlTYjdHutJd7UAZVhn5_Gk5r/exec', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: JSON.stringify(formData)
+        //mode: 'cors', // Tambahkan ini untuk memastikan permintaan CORS
+      })
+        .then(response => {
+          // Periksa apakah ada header CORS di respons
+          if (!response.ok) {
+            throw new Error('Gagal mengirim data');
+          }
+          return response.json();
+        })
+        .then(data => {
+          // Tanggapi respons dari server
+          console.log('Berhasil dikirim:', data);
+
+          // Periksa apakah respons memiliki properti 'message'
+          if (data && data.message) {
+            // Tampilkan pesan menggunakan toastr
+            toastr.success('Berhasil dikirim: ' + data.message);
+          } else {
+            // Tampilkan pesan default jika properti 'message' tidak ditemukan
+            toastr.success('Berhasil dikirim');
+          }
+        })
+        .catch((error) => {
+          console.error('Gagal mengirim data:', error);
+          // Lakukan tindakan jika pengiriman data gagal
+          toastr.error('Gagal mengirim data: ' + error);
+        });
+    });
+  </script>
+
+</body>
+
+</html>

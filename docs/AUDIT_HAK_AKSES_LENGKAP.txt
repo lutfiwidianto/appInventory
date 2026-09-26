@@ -1,0 +1,515 @@
+================================================================================
+  AUDIT LENGKAP SISTEM HAK AKSES PENGGUNA (LEVEL_USER)
+  Aplikasi: appInventory (Flask + SQL Server)
+  Tanggal Audit: 21 Mei 2026
+  Tujuan: Referensi lengkap agar tidak perlu audit ulang dari awal
+================================================================================
+
+DAFTAR ISI
+----------
+1. ARSITEKTUR SISTEM SAAT INI
+2. DAFTAR LEVEL USER YANG DITEMUKAN
+3. AUDIT BACKEND PYTHON (app/*.py)
+4. AUDIT FRONTEND JAVASCRIPT (Templates/controlpagejs/*.js)
+5. AUDIT TEMPLATE HTML (Templates/controlpagehtml/*.html & includes/*.html)
+6. AUDIT NAVIGASI SIDEBAR
+7. MEKANISME AUTENTIKASI (auth.py - PyArmor)
+8. SKEMA DATABASE
+9. DAFTAR BLUEPRINT FLASK (run.py)
+10. PERUBAHAN YANG SUDAH DILAKUKAN (RBAC Dinamis)
+11. PEKERJAAN YANG BELUM SELESAI
+
+================================================================================
+1. ARSITEKTUR SISTEM SAAT INI
+================================================================================
+
+- Framework    : Flask (Python)
+- Server       : Waitress (port 80, 16 threads)
+- Database     : Microsoft SQL Server (192.17.17.201\SQLSERVER)
+- DB Name      : tct_inventory
+- Auth         : JWT token disimpan di cookie "token"
+- Auth Module  : app/auth.py (TERENKRIPSI PyArmor - TIDAK BISA DIMODIFIKASI)
+- Secret Key   : "secret-keyku2023Lutfi" (file config/secretKey.py)
+- Frontend     : AdminLTE + Bootstrap 4 + jQuery + DataTables
+- Realtime     : Flask-SocketIO (polling mode)
+
+Alur autentikasi:
+  1. User login via auth.py (PyArmor) → JWT token dibuat
+  2. Token disimpan di cookie "token"
+  3. Setiap route membaca cookie, decode JWT dgn jwt.decode()
+  4. Payload JWT berisi: sub (username), nama_lengkap, level_user
+  5. level_user dicek secara hardcoded di route/template/JS
+
+================================================================================
+2. DAFTAR LEVEL USER YANG DITEMUKAN
+================================================================================
+
+  Level | Nama           | Keterangan
+  ------|----------------|--------------------------------------------
+  1     | SuperAdmin     | Hak akses penuh ke seluruh sistem
+  2     | User           | Pengguna standar, akses dasar
+  3     | Order Viewer   | Bisa lihat harga di General Order
+  11    | SPV Gudang     | Supervisor Gudang, edit full master barang
+  12    | Admin Gudang   | Admin input gudang, edit partial master barang
+  13    | Operator Gudang| Operator lapangan, read-only
+
+Catatan: Level disimpan sebagai INTEGER di kolom Level_User tabel dbo.users.
+Di frontend JS, nilainya dibaca sebagai STRING dari hidden input #leveluser.
+
+================================================================================
+3. AUDIT BACKEND PYTHON (app/*.py)
+================================================================================
+
+--- app/users.py ---
+File ini adalah SATU-SATUNYA backend yang melakukan pengecekan level secara
+eksplisit untuk membatasi akses route.
+
+  Baris 17:  if data["level_user"] == 1:  → GET /users (lihat daftar user)
+  Baris 24:  else → render dilarang.html
+  Baris 35:  if data["level_user"] == 1:  → POST /register (daftar user baru)
+  Baris 55:  else → render dilarang.html
+  Baris 66:  if data["level_user"] == 1:  → GET/POST /edit_user/<id>
+  Baris 86:  else → render dilarang.html
+  Baris 97:  if data["level_user"] == 1:  → POST /delete_user/<id>
+  Baris 103: else → render dilarang.html
+
+  Kesimpulan: Hanya level 1 (SuperAdmin) yang bisa CRUD user.
+  Semua level lain diarahkan ke halaman "dilarang" (403).
+
+--- app/auth.py ---
+  TERENKRIPSI PYARMOR. Tidak bisa dibaca/dimodifikasi.
+  Isi: 3 baris — import pytransform, pyarmor_runtime(), __pyarmor__(...)
+  Mengekspor: auth_bp (Blueprint)
+
+--- File backend lain yang PASSING level_user ke template ---
+Semua file berikut membaca level_user dari JWT dan meneruskannya ke template
+sebagai variabel Jinja2 (level_user=data["level_user"]):
+
+  app/general.py          baris 38  → dashboard.html
+  app/helper.py           baris 70  → helpers.html
+  app/peminjamanbarang.py baris 22  → peminjamanbarang.html
+  app/peminjamanbarang.py baris 39  → permintaan-it.html
+  app/permintaanit.py     baris 211 → permintaan-it.html
+  app/pmc_form.py         baris 22  → pmcform.html
+  app/pmc_form.py         baris 37  → pmcformulir.html
+  app/pmc_form.py         baris 52  → form_survei_kendaraan.html
+  app/pmc_input_bc40.py   baris 50  → pmc_input_bc40.html
+  app/pmc_mutasi_barang_keluar.py baris 29  → pmc_mutasibarangkeluar.html
+  app/wh_master_barang.py baris 41  → wh_masterbarang.html
+  app/wh_mutasi_barang.py baris 21  → wh_mutasibarang.html
+  app/wh_mutasi_barang_masuk.py baris 58 → wh_mutasibarangmasuk.html
+  app/wh_mutasi_barang_masuk.py baris 83 → wh_mutasibarangmasuk_dev.html
+  app/wh_mutasi_barang_keluar.py baris 62  → wh_mutasibarangkeluar.html
+  app/wh_mutasi_barang_keluar.py baris 110 → wh_mutasibarangkeluar.html
+  app/wh_invoice.py       baris 171 → wh_inv_pengambilan_barang.html
+  app/wh_invoice.py       baris 197 → wh_inv_pengambilan_barang.html
+  app/wh_invoice.py       baris 208 → wh_inv_pemasukan_barang.html
+  app/wh_invoice.py       baris 222 → wh_inv_pemasukan_barang.html
+  app/wh_global_stock.py  baris 22  → wh_globalstock.html
+  app/wh_global_stock.py  baris 36  → wh_globalstock_trial.html
+  app/wh_online_kartu_stock.py    baris 17 → wh_onlinekartustock.html
+  app/wh_onlinekartustockwithsmart.py baris 17 → wh_onlinekartustockwithsmart.html
+  app/wh_laporan.py       baris 83  → wh_laporan_stockopname.html
+  app/wh_all_bpb.py       baris 22  → wh_allbpb.html
+  app/wh_all_pr_barang.py baris 51  → wh_allprbarang.html
+  app/wh_receive_barang.py baris 88 → wh_receive_barang.html
+  app/wh_bj_masuk.py      baris 23  → wh_bj_masuk.html
+  app/wh_bj_keluar.py     baris 23  → wh_bj_keluar.html
+  app/wh_bj_globalstock.py baris 23 → wh_globalstock_bj.html
+
+  Catatan: File-file di atas TIDAK melakukan pengecekan level di backend.
+  Mereka hanya meneruskan nilai level_user ke template/JS untuk pengecekan
+  di sisi klien (client-side).
+
+================================================================================
+4. AUDIT FRONTEND JAVASCRIPT (Templates/controlpagejs/*.js)
+================================================================================
+
+Berikut adalah SETIAP pengecekan levelUser di file JavaScript beserta
+baris dan logika spesifiknya.
+
+--- wh_masterbarang.js ---
+  baris 194:  let levelUser = $("#leveluser").val();
+  baris 299:  if (levelUser === "1" || levelUser === "11" || levelUser === "12")
+              → Mengizinkan akses tombol TAMBAH data master barang
+  baris 421:  let levelUser = document.querySelector("#leveluser").value;
+  baris 424:  if (levelUser == "1" || levelUser == "11" || levelUser == "12")
+              → Mengizinkan akses tombol EDIT (buka modal edit)
+  baris 493:  let levelUser = $("#leveluser").val();
+  baris 523:  if (levelUser === "1" || levelUser === "11")
+              → Edit PENUH: semua field form-control jadi editable, select enabled
+  baris 536:  } else if (levelUser === "12")
+              → Edit TERBATAS: semua field readonly, KECUALI jenisBarangEdit dan rackingEdit
+  baris 555:  } else
+              → Read-only total: semua readonly + select disabled
+  baris 579:  let levelUser = $("#leveluser").val();
+  baris 581:  if (levelUser === "1" || levelUser === "11" || levelUser === "12")
+              → Mengizinkan submit form perubahan data master
+  baris 585:  const levelUser = document.querySelector("#leveluser").value;
+              → Duplikat cek di dalam submit handler
+
+--- wh_masterbarangtrial.js ---
+  baris 86:   let levelUser = $("#leveluser").val();
+  baris 169:  if (levelUser === '1' || levelUser === '11' || levelUser === '12')
+              → Sama seperti wh_masterbarang.js, akses tambah data
+  baris 268:  let levelUser = document.querySelector('#leveluser').value;
+  baris 271:  if (levelUser == '1' || levelUser == '11' || levelUser == '12')
+              → Buka modal edit
+  baris 351:  let levelUser = $("#leveluser").val();
+  baris 382:  if (levelUser === '1' || levelUser === '11')
+              → Edit penuh
+  baris 396:  } else if (levelUser === '12')
+              → Edit terbatas (racking + jenis barang saja)
+  baris 444:  let levelUser = $("#leveluser").val();
+  baris 446:  if (levelUser === '1' || levelUser === '11' || levelUser === '12')
+              → Submit form edit
+  baris 451:  const levelUser = document.querySelector('#leveluser').value;
+
+--- wh_invpemasukanbarang.js ---
+  baris 3:    const levelUser = document.querySelector('#leveluser').value;
+  baris 5:    if (levelUser !== '1')
+              → SEMBUNYIKAN tombol "deleteBon" (hapus seluruh Bon masuk)
+              → Hanya level 1 yang bisa menghapus dokumen Bon Pemasukan utuh
+
+--- wh_invpengambilanbarang.js ---
+  baris 6:    const levelUser = document.querySelector('#leveluser').value;
+  baris 8:    if (levelUser !== '1')
+              → SEMBUNYIKAN tombol "deleteBon" (hapus seluruh Bon keluar)
+              → Hanya level 1 yang bisa menghapus dokumen Bon Pengambilan utuh
+
+--- pmcform.js ---
+  baris 384:  const levelUser = document.querySelector('#leveluser').value;
+              → Dibaca untuk kontrol akses
+  baris 638:  const levelUser = document.querySelector('#leveluser').value;
+  baris 645:  if (levelUser == '1')
+              → Mengizinkan EDIT kolom pengembalian: tanggalkembaliTambah,
+                barangyangkembaliTambah, dikembalikankeTambah, statusTambah,
+                keteranganTambah
+  baris 758:  let levelUser = $("#leveluser").val();
+  baris 762:  if (levelUser == '1')
+              → Mengizinkan aksi DELETE transaksi PMC
+  baris 767:  const levelUser = document.querySelector('#leveluser').value;
+  baris 936:  if (levelUser == '1')
+              → Kontrol akses fitur tambahan PMC
+
+--- pmc_mutasibarangkeluar.js ---
+  baris 3:    const levelUser = document.querySelector('#leveluser').value;
+  baris 1012: // Komentar: "Hanya izinkan tindakan ini jika pengguna memiliki
+              //  leveluser akses Admin / 1"
+  baris 1013: if (levelUser === '1' || levelUser === '2')
+              → Mengizinkan toggle konfigurasi tema dan input smart record
+              → Level 1 DAN level 2 (User biasa) bisa akses fitur ini
+
+--- peminjamanbarang.js ---
+  baris 648:  if (levelUser == '1')
+              → Mengizinkan edit kolom administratif peminjaman
+  baris 765:  if (levelUser == '1')
+              → Mengizinkan aksi hapus dokumen peminjaman
+  baris 939:  if (levelUser == '1')
+              → Kontrol akses fitur tambahan
+
+--- permintaan-it.js ---
+  baris 748:  if (levelUser !== 1) (CATATAN: cek sebagai number, bukan string!)
+              → Menyembunyikan elemen tertentu
+  baris 927:  if (levelUser == '1')
+              → Mengizinkan aksi approval/persetujuan permintaan IT
+  baris 1125: if (levelUser == '1')
+              → Kontrol akses fitur tambahan IT
+
+--- permintaan-void.js ---
+  baris 861:  if (levelUser == '1')
+              → Mengizinkan aksi void/pembatalan dokumen
+  baris 1059: if (levelUser == '1')
+              → Kontrol akses fitur tambahan void
+
+--- formgeneralorder.js ---
+  baris 679:  if (levelUser !== '1' && levelUser !== '3')
+              → SEMBUNYIKAN kolom harga untuk level selain 1 dan 3
+  baris 711:  if (levelUser == '1' || levelUser == '3')
+              → TAMPILKAN kolom CURRENCY dan PRICE
+  baris 734:  if (levelUser == '1' || levelUser == '3')
+              → Akses fitur tambahan harga
+  baris 939:  if (levelUser == '1' || levelUser == '3')
+              → Akses fitur export/cetak dengan harga
+  baris 1124: if ((levelUser == '1' || levelUser == '3'))
+              → Akses submit order dengan harga
+
+--- wh_ang.js ---
+  baris 384:  const levelUser = document.querySelector('#leveluser').value;
+  baris 620:  const levelUser = document.querySelector('#leveluser').value;
+  baris 627:  if (levelUser == '1')
+              → Mengizinkan edit kolom adjustment
+  baris 740:  let levelUser = $("#leveluser").val();
+  baris 744:  if (levelUser == '1')
+              → Mengizinkan aksi hapus adjustment
+  baris 749:  const levelUser = document.querySelector('#leveluser').value;
+  baris 913:  const levelUser = document.querySelector('#leveluser').value;
+  baris 918:  if (levelUser == '1')
+              → Kontrol akses fitur tambahan adjustment
+
+--- wh_allprbarang.js ---
+  baris 492:  const levelUser = $('#leveluser').val();
+  baris 502:  if (levelUser == '1')
+              → Mengizinkan aksi admin pada PR Barang
+
+--- wh_receivebarang.js ---
+  baris 828:  const levelUser = $('#leveluser').val();
+              → Dibaca tapi pengecekan spesifik ada di seksi lain
+
+--- dashboard.js ---
+  baris 41:   if (levelUser == '1')
+              → Menampilkan widget/statistik khusus admin di dashboard
+
+--- wh_mutasibarangkeluar.js ---
+  baris 3:    const levelUser = document.querySelector('#leveluser').value;
+              → Dibaca, digunakan di kontrol lain dalam file ini
+
+--- wh_mutasibarangmasuk.js ---
+  baris 1541: const levelUser = document.querySelector("#leveluser");
+              → Dibaca, digunakan di kontrol lain dalam file ini
+
+--- wh_mutasibjmasuk.js ---
+  baris 3:    const levelUser = document.querySelector('#leveluser').value;
+
+--- wh_mutasibjkeluar.js ---
+  baris 3:    const levelUser = document.querySelector('#leveluser').value;
+
+================================================================================
+5. AUDIT TEMPLATE HTML (Templates/controlpagehtml/*.html)
+================================================================================
+
+--- formgeneralorder.html ---
+  baris 516: {% if level_user == '2' %}
+             → Menyembunyikan kolom CURRENCY dan PRICE untuk level 2 (User biasa)
+             → Level 1 dan 3 bisa melihat kolom harga
+
+--- wh_inv_pemasukan_barang.html ---
+  baris 268: <input type="hidden" id="leveluser" value="{{ level_user }}">
+             → Menyediakan nilai level_user sebagai hidden input untuk JS
+
+--- users_edit.html ---
+  baris 67: <label for="level_user">Level Pengguna:</label>
+  baris 68: <select id="level_user" name="level_user" class="form-control">
+            → Dropdown pilihan level saat edit user (hardcoded options)
+
+--- users_register.html ---
+  baris 69: <label for="level_user">Level User:</label>
+  baris 70: <select class="form-control" id="level_user" name="level_user">
+            → Dropdown pilihan level saat register user baru (hardcoded options)
+
+================================================================================
+6. AUDIT NAVIGASI SIDEBAR
+================================================================================
+
+File: Templates/includes/side_bar.html
+
+--- Hidden input level_user (baris 47) ---
+  <input type="hidden" id="leveluser" name="leveluser" value="{{ level_user }}">
+  → INI adalah sumber data utama yang dibaca oleh SEMUA file JS
+    untuk menentukan hak akses di sisi klien.
+
+--- Menu Settings (baris 276-313) ---
+  baris 276: <li class="nav-item ... has-treeview">  → Menu induk "Settings"
+  baris 285: <a href="{{url_for('users_bp.get_users')}}"> → Link Users (aktif)
+  baris 293: <a href="#">                                → Link Users Role (PLACEHOLDER)
+  baris 300: <a href="#">                                → Link Access Permission (PLACEHOLDER)
+  baris 307: <a href="{{url_for('helper_bp.get_helpers')}}"> → Link Menu Helper (aktif)
+
+  Catatan: Menu Settings TIDAK dibatasi berdasarkan level di sidebar.
+  Pembatasan dilakukan di level route backend (users.py).
+
+================================================================================
+7. MEKANISME AUTENTIKASI (auth.py - PyArmor)
+================================================================================
+
+File: app/auth.py
+Status: TERENKRIPSI dengan PyArmor (binary bytecode)
+Ukuran: 24,924 bytes (3 baris kode terlihat)
+
+Isi yang terlihat:
+  Baris 1: from .pytransform import pyarmor_runtime
+  Baris 2: pyarmor_runtime()
+  Baris 3: __pyarmor__(__name__, __file__, b'\x50\x59\x41...')
+
+Blueprint yang diekspor: auth_bp
+Didaftarkan di run.py baris 83: app.register_blueprint(auth_bp)
+
+Yang diketahui tentang auth.py (dari cara penggunaannya):
+  - Menyediakan route /login (GET → form login, POST → proses login)
+  - Membaca tabel dbo.users (username, password, Level_User, nama_lengkap)
+  - Membuat JWT token dengan payload: { sub, nama_lengkap, level_user, exp }
+  - Menyimpan token ke cookie "token"
+  - TIDAK BISA DIMODIFIKASI tanpa source code asli
+
+PENTING: Karena auth.py tidak bisa diubah, kolom Level_User di tabel
+dbo.users HARUS tetap ada dan terisi. Sistem RBAC baru kita berjalan
+di samping (parallel) sistem auth yang lama.
+
+================================================================================
+8. SKEMA DATABASE
+================================================================================
+
+--- Tabel Lama ---
+
+dbo.users
+  - User_ID     INT (PK, identity)
+  - Nama         VARCHAR
+  - Username     VARCHAR
+  - Password     VARCHAR (MD5 hash)
+  - Level_User   INT (1, 2, 3, 11, 12, 13)
+  - Email        VARCHAR
+  - Log          VARCHAR (20 chars = sedang login / online)
+  - Role_ID      INT (FK → dbo.roles) [BARU DITAMBAHKAN]
+
+--- Tabel Baru (RBAC Dinamis, sudah dibuat) ---
+
+dbo.roles
+  - Role_ID      INT (PK, identity)
+  - Role_Name    VARCHAR(50) UNIQUE
+  - Description  VARCHAR(255)
+
+dbo.permissions
+  - Permission_ID   INT (PK, identity)
+  - Permission_Code VARCHAR(50) UNIQUE
+  - Permission_Name VARCHAR(100)
+  - Module          VARCHAR(50)
+
+dbo.role_permissions
+  - Role_ID        INT (FK → dbo.roles, ON DELETE CASCADE)
+  - Permission_ID  INT (FK → dbo.permissions, ON DELETE CASCADE)
+  - PRIMARY KEY (Role_ID, Permission_ID)
+
+--- Data Permission yang sudah dimasukkan ---
+
+  Permission_Code       | Permission_Name                              | Module
+  ----------------------|----------------------------------------------|--------
+  USER_CRUD             | CRUD Pengguna (Tambah, Edit, Hapus User)     | Settings
+  ROLE_MANAGE           | Mengelola Peran & Izin Akses                 | Settings
+  WH_MASTER_EDIT_FULL   | Edit penuh data master barang                | Gudang
+  WH_MASTER_EDIT_PARTIAL| Edit terbatas master barang (Jenis & Racking)| Gudang
+  WH_DELETE_BON         | Hapus dokumen Bon masuk/keluar utuh          | Gudang
+  WH_VIEW_PRICING       | Melihat kolom CURRENCY & PRICE               | Gudang
+  PMC_DELETE            | Menghapus data transaksi PMC                 | PMC
+  PMC_EDIT_RETURNS      | Memperbarui kolom pengembalian barang PMC     | PMC
+  IT_MANAGE             | Menyetujui, mengedit, menghapus form IT/Void | IT
+
+--- Pemetaan Izin Awal ---
+
+  SuperAdmin (1)    → SEMUA izin
+  User (2)          → PMC_DELETE
+  Order Viewer (3)  → WH_VIEW_PRICING
+  SPV Gudang (11)   → WH_MASTER_EDIT_FULL, WH_VIEW_PRICING
+  Admin Gudang (12) → WH_MASTER_EDIT_PARTIAL
+  Operator Gudang (13) → (tidak ada izin khusus)
+
+================================================================================
+9. DAFTAR BLUEPRINT FLASK (run.py)
+================================================================================
+
+  No | Import Variable                  | Blueprint Name                    | File Sumber
+  ---|----------------------------------|-----------------------------------|---------------------------
+  1  | auth_bp                          | auth_bp                           | app/auth.py (PyArmor)
+  2  | gen_bp                           | gen_bp                            | app/general.py
+  3  | helper_bp                        | helper_bp                         | app/helper.py
+  4  | users_bp                         | users_bp                          | app/users.py
+  5  | permintIt_bp                     | permintIt_bp                      | app/permintaanit.py
+  6  | peminjamanBarang_bp              | peminjamanBarang_bp               | app/peminjamanbarang.py
+  7  | pmc_nomorsurat_bp                | pmc_nomorsurat_bp                 | app/pmc_nomor_surat.py
+  8  | pmc_form_bp                      | pmc_form_bp                       | app/pmc_form.py
+  9  | pmc_bc40_bp                      | pmc_bc40_bp                       | app/pmc_input_bc40.py
+  10 | wh_pmcmutasibarangkeluar_bp      | wh_pmcmutasibarangkeluar_bp       | app/pmc_mutasi_barang_keluar.py
+  11 | wh_allbpb_bp                     | wh_allbpb_bp                      | app/wh_all_bpb.py
+  12 | wh_laporan_bp                    | wh_laporan_bp                     | app/wh_laporan.py
+  13 | wh_masterbarang_bp               | wh_masterbarang_bp                | app/wh_master_barang.py
+  14 | wh_allprbarang_bp                | wh_allprbarang_bp                 | app/wh_all_pr_barang.py
+  15 | wh_receivebarang_bp              | wh_receivebarang_bp               | app/wh_receive_barang.py
+  16 | wh_mutasibarang_bp               | wh_mutasibarang_bp                | app/wh_mutasi_barang.py
+  17 | wh_mutasibarangmasuk_bp          | wh_mutasibarangmasuk_bp           | app/wh_mutasi_barang_masuk.py
+  18 | wh_mutasibarangkeluar_bp         | wh_mutasibarangkeluar_bp          | app/wh_mutasi_barang_keluar.py
+  19 | wh_onlinekartustock_bp           | wh_onlinekartustock_bp            | app/wh_online_kartu_stock.py
+  20 | wh_onlinekartustock_w_smart_bp   | wh_onlinekartustock_w_smart_bp    | app/wh_onlinekartustockwithsmart.py
+  21 | wh_globalstock_bp                | wh_globalstock_bp                 | app/wh_global_stock.py
+  22 | wh_invoice_bp                    | wh_invoice_bp                     | app/wh_invoice.py
+  23 | wh_bj_masuk_bp                   | wh_bj_masuk_bp                    | app/wh_bj_masuk.py
+  24 | wh_bj_keluar_bp                  | wh_bj_keluar_bp                   | app/wh_bj_keluar.py
+  25 | wh_bj_globalstock_bp             | wh_bj_globalstock_bp              | app/wh_bj_globalstock.py
+
+================================================================================
+10. PERUBAHAN YANG SUDAH DILAKUKAN (RBAC Dinamis)
+================================================================================
+
+Status: Sebagian selesai (per 21 Mei 2026)
+
+A. DATABASE ✅ SELESAI
+   - Tabel roles, permissions, role_permissions sudah dibuat
+   - Kolom Role_ID sudah ditambahkan ke dbo.users
+   - Data awal peran dan izin sudah dimasukkan
+   - User yang ada sudah dimigrasikan (Role_ID = Level_User)
+   - Script setup: scratch/setup_db_rbac.py
+
+B. BACKEND (app/utils.py) ✅ SELESAI
+   Ditambahkan 2 fungsi baru:
+   - get_user_permissions(username) → return list of Permission_Code strings
+   - check_permission(permission_code) → Flask route decorator
+
+C. BACKEND (app/users.py) ✅ SELESAI
+   - Route /users, /register, /edit_user, /delete_user sekarang pakai
+     @check_permission("USER_CRUD") (bukan lagi if level_user == 1)
+   - INSERT/UPDATE user sekarang juga mengisi Role_ID = Level_User
+   - Ditambahkan route baru:
+     /roles → GET/POST manajemen peran + penugasan user ke peran
+     /permissions → GET/POST matriks izin per peran
+
+D. FRONTEND HTML ✅ SELESAI
+   File baru:
+   - Templates/controlpagehtml/users_roles.html
+   - Templates/controlpagehtml/access_permissions.html
+
+E. SIDEBAR (side_bar.html) ❌ BELUM
+   Link "Users Role" dan "Access Permission" masih href="#"
+
+================================================================================
+11. PEKERJAAN YANG BELUM SELESAI
+================================================================================
+
+A. UPDATE SIDEBAR (side_bar.html baris 293 dan 300)
+   Ubah:
+     <a href="#" ...>Users Role</a>
+   Menjadi:
+     <a href="{{url_for('users_bp.get_roles')}}" ...>Users Role</a>
+
+   Ubah:
+     <a href="#" ...>Access Permission</a>
+   Menjadi:
+     <a href="{{url_for('users_bp.get_permissions')}}" ...>Access Permission</a>
+
+B. MIGRASI PENGECEKAN LEVEL DI JAVASCRIPT (Tahap 2 - Opsional)
+   Untuk membuat JS juga dinamis, perlu:
+   1. Tambahkan context_processor di run.py untuk auto-inject permissions
+   2. Di nav_bar.html atau base.html, render JSON array permissions:
+      <script id="user-permissions-json" type="application/json">
+        {{ user_permissions | tojson }}
+      </script>
+   3. Di setiap file JS, ganti:
+      if (levelUser == '1') → if (userPermissions.includes('KODE_IZIN'))
+
+   File JS yang perlu dimigrasikan (12 file):
+   - wh_masterbarang.js (6 cek, level 1/11/12)
+   - wh_masterbarangtrial.js (6 cek, level 1/11/12)
+   - wh_invpemasukanbarang.js (1 cek, level 1)
+   - wh_invpengambilanbarang.js (1 cek, level 1)
+   - pmcform.js (4 cek, level 1)
+   - pmc_mutasibarangkeluar.js (1 cek, level 1/2)
+   - peminjamanbarang.js (3 cek, level 1)
+   - permintaan-it.js (3 cek, level 1)
+   - permintaan-void.js (2 cek, level 1)
+   - formgeneralorder.js (5 cek, level 1/3)
+   - wh_ang.js (5 cek, level 1)
+   - wh_allprbarang.js (1 cek, level 1)
+   - dashboard.js (1 cek, level 1)
+
+   Total: ~39 pengecekan level di 13 file JS
+
+================================================================================
+  AKHIR DOKUMEN AUDIT
+================================================================================

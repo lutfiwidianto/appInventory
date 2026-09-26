@@ -1,0 +1,365 @@
+<!-- Main Sidebar Container -->
+<aside class="main-sidebar sidebar-dark-primary elevation-4">
+  <!-- Brand Logo -->
+  <a href="{{url_for('gen_bp.dashboard')}}" class="brand-link">
+    <img src="{{ url_for('static', filename='img/tct_logoa.png') }}" alt="AdminLTE Logo"
+      class="brand-image img-rounded elevation-3" style="opacity: .8; margin-left: -7px;">
+    <span class="brand-text font-weight-light">TUNG CIA TECH</span>
+  </a>
+
+
+  <!-- Sidebar -->
+  <div class="sidebar mini xs">
+    <!-- Sidebar user panel (optional) -->
+    <div class="mt-1 pb-1 mb-1"></div>
+
+    <!-- SidebarSearch Form -->
+    <div class="form-inline">
+      <div class="input-group" data-widget="sidebar-search">
+        <input class="form-control form-control-sidebar" type="search" placeholder="Search" aria-label="Search">
+        <div class="input-group-append">
+          <button class="btn btn-sidebar">
+            <i class="fas fa-search fa-fw"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar Menu -->
+    <nav class="mt-2">
+      <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+        <li class="nav-item">
+          <a href="{{url_for('gen_bp.dashboard')}}" class="nav-link  {%  if submenu=='dashboard' %} active {% endif %}">
+            <i class="nav-icon fas fa-chart-pie"></i>
+            <p>Dashboard</p>
+          </a>
+        </li>
+        <li class="nav-item {%  if menu=='deptit' %} menu-open {% else %} closed {% endif %}">
+          <a href="#" class="nav-link">
+            <i class="nav-icon fas fa-chart-pie"></i>
+            <p>
+              Dept. IT
+              <i class="fas fa-angle-left right"></i>
+            </p>
+          </a>
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{url_for('permintIt_bp.permintaanit')}}"
+                class="nav-link {%  if submenu=='it' %} active {% endif %}">
+                <i class="far fa-circle nav-icon"></i>
+                <p>Permintaan IT</p>
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a href="{{url_for('peminjamanBarang_bp.peminjamanbarang')}}"
+                class="nav-link {%  if submenu=='pinjam' %} active {% endif %}">
+                <i class="far fa-circle nav-icon"></i>
+                <p>Peminjaman Barang</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{url_for('peminjamanBarang_bp.peminjamanbarang')}}"
+                class="nav-link {%  if submenu=='pinjam' %} active {% endif %}">
+                <i class="far fa-circle nav-icon"></i>
+                <p>Laporan Backup Database</p>
+              </a>
+            </li>
+          </ul>
+        </li>
+        <li class="nav-item {%  if menu=='deptpmc' %} menu-open {% else %} closed {% endif %}">
+          <a href="#" class="nav-link">
+            <i class="nav-icon fas fa-chart-pie"></i>
+            <p>
+              Dept. PMC
+              <i class="fas fa-angle-left right"></i>
+            </p>
+          </a>
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{url_for('pmc_form_bp.pmcformulir')}}"
+                class="nav-link {%  if submenu=='pmcformulir' %} active {% endif %}">
+                <i class="far fa-circle nav-icon"></i>
+                <p>FORM PMC</p>
+              </a>
+            </li>
+          </ul>
+
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{url_for('pmc_nomorsurat_bp.pmcnomorsurat')}}"
+                class="nav-link {%  if submenu=='nosurat' %} active {% endif %}">
+                <i class="far fa-circle nav-icon"></i>
+                <p>NOMOR SURAT</p>
+              </a>
+            </li>
+          </ul>
+
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{url_for('pmc_pemetaankemasan_bp.pmc_pemetaankemasan')}}"
+                class="nav-link {%  if submenu=='pemetaankemasan' %} active {% endif %}">
+                <i class="far fa-circle nav-icon"></i>
+                <p>PEMETAAN KEMASAN</p>
+              </a>
+            </li>
+          </ul>
+
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{url_for('pmc_produksipakaipengemas_bp.pmc_produksi_pakai_pengemas')}}"
+                class="nav-link {%  if submenu=='produksipakaipengemas' %} active {% endif %}">
+                <i class="far fa-circle nav-icon"></i>
+                <p>PRODUKSI PAKAI PENGEMAS</p>
+              </a>
+            </li>
+          </ul>
+
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{url_for('pmc_produksitanpapengemas_bp.pmc_produksi_tanpa_pengemas')}}"
+                class="nav-link {%  if submenu=='produksitanpapengemas' %} active {% endif %}">
+                <i class="far fa-circle nav-icon"></i>
+                <p>PRODUKSI TANPA PENGEMAS</p>
+              </a>
+            </li>
+          </ul>
+
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{url_for('pmc_bc40_bp.input_bc40')}}"
+                class="nav-link {%  if submenu=='draft' %} active {% endif %}">
+                <i class="far fa-circle nav-icon"></i>
+                <p>DRAFT BC 40</p>
+              </a>
+            </li>
+          </ul>
+
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{url_for('wh_pmcmutasibarangkeluar_bp.pmcmutasibarangkeluar')}}"
+                class="nav-link {%  if submenu=='inputmutasi' %} active {% endif %}">
+                <i class="far fa-circle nav-icon"></i>
+                <p>INPUT MUTASI</p>
+              </a>
+            </li>
+          </ul>
+
+        <li class="nav-item {%  if menu=='deptpr' %} menu-open {% else %} closed {% endif %} has-treeview">
+          <a href="#" class="nav-link">
+            <i class="nav-icon fas fa-chart-pie"></i>
+            <p>
+              Dept. PURCHASE
+              <i class="right fas fa-angle-left"></i>
+            </p>
+          </a>
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{url_for('wh_allprbarang_bp.allprbarang')}}"
+                class="nav-link {%  if submenu=='allprbarang' %} active {% endif %}">
+                <i class="far fa-circle nav-icon"></i>
+                <p>PR Barang</p>
+              </a>
+            </li>
+          </ul>
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{url_for('wh_receivebarang_bp.receive_barang')}}"
+                class="nav-link {%  if submenu=='receive_barang' %} active {% endif %}">
+                <i class="far fa-circle nav-icon"></i>
+                <p>Receive Note</p>
+              </a>
+            </li>
+          </ul>
+        </li>
+        <li class="nav-item {%  if menu=='deptwh' %} menu-open {% else %} closed {% endif %}">
+          <a href="#" class="nav-link">
+            <i class="nav-icon fas fa-store"></i>
+            <p>
+              Dept. WAREHOUSE
+              <i class="fas fa-angle-left right"></i>
+            </p>
+          </a>
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{url_for('wh_masterbarang_bp.masterbarang')}}"
+                class="nav-link {%  if submenu=='masterbarang' %} active {% endif %}">
+                <i class="far fa-circle nav-icon"></i>
+                <p>Master Barang</p>
+              </a>
+            </li>
+          </ul>
+
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{url_for('wh_mutasibarangmasuk_bp.mutasibarangmasuk')}}"
+                class="nav-link {%  if submenu=='mutasibarangmasuk' %} active {% endif %}">
+                <i class="far fa-circle nav-icon"></i>
+                <p>Mutasi Barang Masuk</p>
+              </a>
+            </li>
+          </ul>
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{url_for('wh_mutasibarangkeluar_bp.mutasibarangkeluar')}}"
+                class="nav-link {%  if submenu=='mutasibarangkeluar' %} active {% endif %}">
+                <i class="far fa-circle nav-icon"></i>
+                <p>Mutasi Barang Keluar</p>
+              </a>
+            </li>
+          </ul>
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{url_for('wh_onlinekartustock_bp.onlinekartustock')}}"
+                class="nav-link {%  if submenu=='onlinekartustock' %} active {% endif %}">
+                <i class="far fa-circle nav-icon"></i>
+                <p>Kartu Stock</p>
+              </a>
+            </li>
+          </ul>
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{url_for('wh_onlinekartustock_w_smart_bp.onlinekartustock')}}"
+                class="nav-link {%  if submenu=='onlinekartustockwsmart' %} active {% endif %}">
+                <i class="far fa-circle nav-icon"></i>
+                <p>Compare Kartu Stock</p>
+              </a>
+            </li>
+          </ul>
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{url_for('wh_globalstock_bp.globalstock')}}"
+                class="nav-link {%  if submenu=='globalstock' %} active {% endif %}">
+                <i class="far fa-circle nav-icon"></i>
+                <p>Global Stock</p>
+              </a>
+            </li>
+          </ul>
+          <ul class="nav nav-treeview">
+            <li class="nav-item {%  if menu=='deptwh' %} menu-open {% else %} closed {% endif %} has-treeview">
+              <a href="#" class="nav-link">
+                <i class="nav-icon fas fa-chart-line"></i>
+                <p>
+                  WH Laporan
+                  <i class="right fas fa-angle-left"></i>
+                </p>
+              </a>
+              <ul class="nav nav-treeview">
+                <li class="nav-item">
+                  <a href="{{url_for('wh_laporan_bp.lap_stockopname')}}"
+                    class="nav-link {% if submenu=='stockopname' %} active {% endif %}" style="margin-left: 10px;">
+                    <i class="fas fa-cube nav-icon"></i>
+                    <p>Stock Opname</p>
+                  </a>
+
+                </li>
+
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li class="nav-item {%  if menu=='deptwhbj' %} menu-open {% else %} closed {% endif %}">
+          <a href="#" class="nav-link">
+            <i class="nav-icon fas fa-store"></i>
+            <p>
+              WH BARANG JADI
+              <i class="fas fa-angle-left right"></i>
+            </p>
+          </a>
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{url_for('wh_masterbarang_bp.masterbarang')}}"
+                class="nav-link {%  if submenu=='masterbarang' %} active {% endif %}">
+                <i class="far fa-circle nav-icon"></i>
+                <p>Master Barang</p>
+              </a>
+            </li>
+          </ul>
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{url_for('wh_bj_masuk_bp.mutasibjmasuk')}}"
+                class="nav-link {%  if submenu=='mutasibjmasuk' %} active {% endif %}">
+                <i class="far fa-circle nav-icon"></i>
+                <p>FG Barang Masuk</p>
+              </a>
+            </li>
+          </ul>
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{url_for('wh_bj_keluar_bp.mutasibjkeluar')}}"
+                class="nav-link {%  if submenu=='mutasibjkeluar' %} active {% endif %}">
+                <i class="far fa-circle nav-icon"></i>
+                <p>FG Barang Keluar</p>
+              </a>
+            </li>
+          </ul>
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{url_for('wh_bj_globalstock_bp.onlinekartustockbj')}}"
+                class="nav-link {%  if submenu=='onlinekartustockbj' %} active {% endif %}">
+                <i class="far fa-circle nav-icon"></i>
+                <p>Global Stock FGWH</p>
+              </a>
+            </li>
+          </ul>
+        </li>
+        <li class="nav-item {%  if menu=='settings' %} menu-open {% else %} closed {% endif %} has-treeview">
+          <a href="#" class="nav-link">
+            <i class="nav-icon fas fa-cog"></i>
+            <p>
+              Settings
+              <i class="right fas fa-angle-left"></i>
+            </p>
+          </a>
+          <ul class="nav nav-treeview">
+            <li class="nav-item">
+              <a href="{{url_for('cloudflare_tunnel_bp.cloudflare_tunnel_page')}}"
+                class="nav-link {%  if submenu=='cloudflare' %} active {% endif %}" style="margin-left: 10px;">
+                <i class="fas fa-shield-alt nav-icon"></i>
+                <p>Cloudflare Tunnel</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{url_for('users_bp.get_users')}}"
+                class="nav-link {%  if submenu=='users' %} active {% endif %}" style="margin-left: 10px;">
+                <i class="fas fa-users nav-icon"></i>
+                <p>Users</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{url_for('users_bp.get_roles')}}"
+                class="nav-link {%  if submenu=='usersrole' %} active {% endif %}" style="margin-left: 10px;">
+                <i class="fas fa-user-lock nav-icon"></i>
+                <p>Users Role</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{url_for('users_bp.get_permissions')}}"
+                class="nav-link {%  if submenu=='usersaccess' %} active {% endif %}" style="margin-left: 10px;">
+                <i class="fas fa-eye nav-icon"></i>
+                <p>Access Permission</p>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a href="{{url_for('helper_bp.get_helpers')}}"
+                 class="nav-link {%  if submenu=='helpers' %} active {% endif %}" style="margin-left: 10px;">
+                 <!-- Ganti ikon di bawah ini dengan ikon yang Anda inginkan -->
+                 <i class="fas fa-handshake-angle nav-icon"></i>
+                 <p>Menu Helper</p>
+              </a>
+            </li> 
+            <li class="nav-item">
+              <a href="{{url_for('backup_db_bp.backup_page')}}"
+                 class="nav-link {%  if submenu=='backupdb' %} active {% endif %}" style="margin-left: 10px;">
+                 <i class="fas fa-database nav-icon"></i>
+                 <p>Backup Database</p>
+              </a>
+            </li> 
+          </ul>
+        </li>
+      </ul>
+    </nav>
+    <!-- /.sidebar-menu -->
+  </div>
+  <!-- /.sidebar -->
+</aside>

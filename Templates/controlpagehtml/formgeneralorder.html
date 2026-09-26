@@ -1,0 +1,942 @@
+{% extends 'base/base.html' %}
+{% block title %}{{ titlePage }}{% endblock %}
+{% block head %}
+{{ super() }}
+<!-- CSS khusus halaman ini -->
+
+<!-- DataTables -->
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/datatables-responsive/css/responsive.bootstrap4.min.css') }}"> 
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/datatables-buttons/css/buttons.bootstrap4.min.css') }}"> 
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/select2/css/select2.min.css') }}"> 
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css') }}"> 
+<link rel="stylesheet" href="{{ url_for('static', filename='adminlte/adminlte.min.css') }}">
+<!-- Load Bootstrap CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.5.6/css/buttons.dataTables.min.css">
+<style>
+  .modal-dialog.custom {
+  max-width: 1000px;
+}
+
+.modal-body {
+  max-height: 670px;
+  overflow-y: auto;
+}
+
+</style>
+{% endblock %}
+{% block content %}
+<!--  ------------ ------------ ------------Isi content halaman ini------------ ------------ ------------ -->
+
+  <div class="content-wrapper">
+  <!-- Content Header (Page header) -->
+  <section class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-left">
+            <li class="breadcrumb-item"><a href="#">DEPARTEMEN SC1</a></li>
+            <li class="breadcrumb-item active">General Order</li>
+          </ol>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-right">
+            <li><a href="#"> Automatic Log out :&nbsp;</a></li>
+            <li><span id="timer">00:00:00</span></li>
+          </ol>
+        </div>
+      </div>
+    </div><!-- /.container-fluid -->
+  </section>
+
+  <!-- Main content -->
+  <section class="content">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Data general order</h2>
+              <button type="button" class="btn btn-primary float-right" data-toggle="modal" data-target="#formModal">
+                Tambah Data </button>
+                <button type="button" id="btnRefresh" class="btn btn-success float-right" style="margin-right: 20px;">
+                Refresh
+              </button>
+              <!-- <button type="button" onclick="showAlert()" class="btn btn-primary">Tampilkan Alert</button> -->
+
+              <button type="text" id="btnPending" class="btn float-right" style="margin-right: 350px; cursor: default; background-color: #dd9295; display: none;">
+                PENDING
+              </button>
+              
+            </div>
+            <!-- /.card-header -->
+            <div class="card-body">
+              <table id="example1" class="table table-striped table-bordered dt-responsive nowrap" style="width:100%">
+                
+                <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>TANGGAL PENGAJUAN</th>
+                  <th>STATUS SC1</th>
+                  <th>ID NUMBER</th>
+                  <th>NAMA BARANG</th>
+                  <th>SPESIFIKASI</th>
+                  <th>QTY</th>
+                  <th>UNIT</th>
+                  <th>DEPT</th>
+                  <th>CODE BUDGET</th>
+                  <th>STATUS</th>
+                  <th>KATEGORI</th>
+                  <th>DETAIL KATEGORI</th>
+                  <th>TO</th>
+                  <th>PRICE</th>
+                  <th>SUPLIER</th>
+                  <th>NAMA REQUEST</th>
+                  <th>KRITERIA</th>
+                  <th style="width: 80px; justify-content: center; text-align: center;">AKSI</th>
+                </tr>
+                </thead>
+                <tbody>
+                
+                </tbody>
+                <!--tfoot>
+                <tr>
+                  <th>ID</th>
+                  <th>TANGGAL PENGAJUAN</th>
+                  <th>STATUS SC1</th>
+                  <th>ID NUMBER</th>
+                  <th>NAMA BARANG</th>
+                  <th>SPESIFIKASI</th>
+                  <th>QTY</th>
+                  <th>UNIT</th>
+                  <th>DEPT</th>
+                  <th>CODE BUDGET</th>
+                  <th>STATUS</th>
+                  <th>KATEGORI</th>
+                  <th>DETAIL KATEGORI</th>
+                  <th>TO</th>
+                  <th>PRICE</th>
+                  <th>SUPLIER</th>
+                  <th>NAMA REQUEST</th>
+                  <th>KRITERIA</th>
+                  <th style="width: 80px; justify-content: center; text-align: center;">AKSI</th>
+                </tr>
+                </tfoot-->
+              </table>
+            </div>
+            <!-- /.card-body -->
+          </div>
+          <!-- /.card -->
+        </div>
+        <!-- /.col -->
+      </div>
+      <!-- /.row -->
+    </div>
+    <!-- /.container-fluid -->
+  </section>
+  <!-- /.content -->
+</div>
+<!-- /.content-wrapper -->
+<!-- Modal Tambah-->
+<div class="modal fade" id="formModal" tabindex="-1" role="dialog" aria-labelledby="tambahModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered custom" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="tambahModalLabel">Tambah Data</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      
+      <form id="form-tambah-data" class="needs-validation" novalidate>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label>Tanggal Pengajuan:</label>
+                <div class="input-group date" id="tanggalpengajuanTambahDiv" data-target-input="nearest">
+                    <input type="text" class="form-control datetimepicker-input" id="tanggalpengajuanTambah" name="tanggalpengajuanTambah" data-target="#tanggalpengajuanTambahDiv"/>
+                    <div class="input-group-append" data-target="#tanggalpengajuanTambahDiv" data-toggle="datetimepicker">
+                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                    </div>
+                    <div class="invalid-feedback inv-tanggalpengajuanTambah-0">
+                      Harus diisi.
+                    </div>
+                    <div class="valid-feedback tanggalpengajuanTambah">
+                      Valid!
+                    </div>
+                </div>
+            </div>           
+            <div class="form-group">
+              <label for="idnumberTambah">ID Number :</label>
+              <input type="text" class="form-control idnumberTambah" id="idnumberTambah" placeholder="Masukkan id number" required autocomplete="off">
+              <div class="invalid-feedback inv-idnumberTambah-0">
+                Nomor Asset tidak boleh kosong.
+              </div>
+              <div class="valid-feedback idnumberTambah">
+                Valid!
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="namabarangTambah">Nama Barang :</label>
+              <input type="text" class="form-control namabarangTambah" id="namabarangTambah" nama="namabarangTambah" placeholder="Masukkan nama barang" required autocomplete="off">
+              <div class="invalid-feedback inv-namabarangTambah-0">
+                Harus diisi.
+              </div>
+              <div class="valid-feedback namabarangTambah">
+                Valid!
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="spesifikasiTambah">Spesifikasi :</label>
+              <input type="text" class="form-control spesifikasiTambah" id="spesifikasiTambah" placeholder="Masukkan spesifikasi" required autocomplete="off">
+              <div class="invalid-feedback inv-spesifikasiTambah-0">
+                Harus diisi.
+              </div>
+              <div class="valid-feedback spesifikasiTambah">
+                Valid!
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="qtyTambah">QTY :</label>
+              <input type="text" class="form-control qtyTambah" id="qtyTambah" name="qtyTambah" placeholder="Masukkan QTY" required autocomplete="off">
+              <div class="invalid-feedback inv-qtyTambah-0">
+                Harus diisi.
+              </div>
+              <div class="valid-feedback qtyTambah">
+                Valid!
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="unitTambah">Unit / Satuan :</label>
+              <input type="text" class="form-control unitTambah" id="unitTambah" nama="unitTambah" placeholder="Masukkan unit" required autocomplete="off">
+              <div class="invalid-feedback inv-unitTambah-0">
+                Harus diisi.
+              </div>
+              <div class="valid-feedback unitTambah">
+                Valid!
+              </div>
+            </div> 
+            <div class="form-group">
+              <label for="namarequestTambah">Nama Request :</label>
+              <input type="text" class="form-control namarequestTambah" id="namarequestTambah" nama="namarequestTambah" placeholder="Masukkan Nama Anda" required autocomplete="off">
+              <div class="invalid-feedback inv-namarequestTambah-0">
+                Harus diisi.
+              </div>
+              <div class="valid-feedback namarequestTambah">
+                Valid!
+              </div>
+            </div> 
+            <div class="form-group">
+              <label>Dept :</label>
+              <select id="deptTambah" class="form-control select2bs4" style="width: 100%;" id="select2">
+                <option selected disabled value=""></option>
+                <option>ACC</option>
+                <option>AKN</option>
+                <option>AQ1</option>
+                <option>AQ3</option>
+                <option>AQ5</option>
+                <option>BKL</option>
+                <option>BOSS</option>
+                <option>CNC</option>
+                <option>D1</option>
+                <option>EXP</option>
+                <option>F1</option>
+                <option>F3</option>
+                <option>F4</option>
+                <option>F5</option>
+                <option>FIN</option>
+                <option>FN1</option>
+                <option>HRD</option>
+                <option>LS</option>
+                <option>M</option>
+                <option>OTHER</option>
+                <option>PRF</option>
+                <option>QA</option>
+                <option>SAP</option>
+                <option>SC1</option>
+                <option>SC2</option>
+                <option>SPD1</option>
+                <option>SPD2</option>
+                <option>UV1</option>
+                <option>UV2</option>
+                <option>UV3</option>
+                <option>YD1</option>
+              </select>
+              <div class="invalid-feedback inv-deptTambah-0">
+                Harus diisi.
+              </div>
+              <div class="valid-feedback deptTambah">
+                  Valid!
+              </div>
+            </div>
+            
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="kriteriaTambah">Kriteria :</label>
+                <select id="kriteriaTambah" name="kriteriaTambah" class="form-control kriteriaTambah" required>
+                  <option selected disabled value=""></option>
+                  <option>BUFFER STOCK</option>
+                  <option>PROJECT</option>
+                  <option>NEW ITEM</option>
+                </select>
+                <div class="invalid-feedback inv-kriteriaTambah-0">
+                  Harus diisi.
+                </div>
+                <div class="valid-feedback kriteriaTambah">
+                    Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="kodebudgetTambah">Kode Budget :</label>
+                <input type="text" class="form-control kodebudgetTambah" id="kodebudgetTambah" nama="kodebudgetTambah" placeholder="Masukkan kode budget" required autocomplete="off">
+                <div class="invalid-feedback inv-kodebudgetTambah-0">
+                  Harus diisi.
+                </div>
+                <div class="valid-feedback kodebudgetTambah">
+                  Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="statusTambah">Status :</label>
+                <select id="statusTambah" class="form-control statusTambah" required>
+                  <option selected disabled value=""></option>
+                  <option>RFQ</option>
+                  <option>ORDER</option>
+                </select>
+                <div class="invalid-feedback inv-statusTambah-0">
+                  Harus diisi.
+                </div>
+                <div class="valid-feedback statusTambah">
+                  Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="kategoriTambah">Kategori :</label>
+                <select id="kategoriTambah" class="form-control kategoriTambah" required>
+                    <option selected disabled value=""></option>
+                    <option>URGENT</option>
+                    <option>NON URGENT</option>
+                </select>
+                <div class="invalid-feedback inv-kategoriTambah-0">
+                    Harus diisi.
+                </div>
+                <div class="valid-feedback kategoriTambah">
+                    Valid!
+                </div>
+              </div>
+              <div class="form-group" id="keteranganUrgent" style="display:none">
+                <label for="detailkategoriTambah">Keterangan Urgent :</label>
+                <textarea class="form-control detailkategoriTambah" id="detailkategoriTambah" placeholder="" required></textarea>
+                <div class="invalid-feedback inv-detailkategoriTambah-0">
+                    Harus diisi.
+                </div>
+                <div class="valid-feedback detailkategoriTambah">
+                    Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="toTambah">to :</label>
+                <select id="toTambah" class="form-control toTambah" required>
+                  <option selected disabled value=""></option>
+                  <option>IKA</option>
+                  <option>ICHA</option>
+                  <option>ILMIN</option>
+                  <option>NAFA</option>
+                  <option>YANTI</option>
+                </select>
+                <div class="invalid-feedback inv-toTambah-0">
+                  Harus diisi.
+                </div>
+                <div class="valid-feedback toTambah">
+                  Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="inputState statussc1Tambah">Status SC1 :</label>
+                <select id="statussc1Tambah" class="form-control statussc1Tambah" required>
+                  <option selected value="New">NEW</option>
+                </select>
+                  <div class="invalid-feedback inv-statussc1Tambah-0">
+                    Harus diisi.
+                  </div>
+                  <div class="valid-feedback statussc1Tambah">
+                    Valid!
+                  </div>
+              </div> 
+              <div class="form-group row">
+                <div class="col-md-4">
+                  <label for="currencyTambah">Currency:</label>
+                  <select class="form-control" id="currencyTambah" name="currencyTambah">
+                    <option value=""></option>
+                    <option value="IDR">IDR</option>
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                    <option value="NTD">NTD</option>
+                    <option value="CNY">CNY</option>
+                  </select>
+                </div>
+                <div class="col-md-8">
+                  <label for="priceTambah">Price:</label>
+                  <div class="input-group">
+                    <span id="pricespanTambah" name="pricespanTambah" class="input-group-text currency-symbol" ></span>
+                    <input type="number" class="form-control" id="priceTambah"  name="priceTambah" placeholder="Masukkan price" required autocomplete="off">
+                    <div class="invalid-feedback inv-priceTambah-0">
+                      Harus diisi.
+                    </div>
+                    <div class="invalid-feedback inv-priceTambah-1">
+                      Maksimal 5 Karakter.
+                    </div>
+                    <div class="valid-feedback priceTambah">
+                      Valid!
+                    </div>
+                  </div>
+                </div>
+              </div>                         
+              <div class="form-group">
+                <label for="suplierTambah">Suplier :</label>
+                <input type="text" class="form-control suplierTambah" id="suplierTambah"  name="suplierTambah" placeholder="Masukkan nama suplier" required autocomplete="off">
+                <div class="invalid-feedback inv-suplierTambah-0">
+                  Harus diisi.
+                </div>
+                <div class="invalid-feedback inv-suplierTambah-1">
+                  Maksimal 5 Karakter.
+                </div>
+                <div class="valid-feedback suplierTambah">
+                  Valid!
+                </div>
+              </div>              
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- Modal -->
+<div class="modal fade" id="detailTable" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Detail</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <table id="detail" class="table table-striped table-bordered">
+          <thead>
+            <tr>
+              <th>TANGGAL PENGAJUAN</th>
+              <th>:</th>
+              <th id="detail_tanggalpengajuan"></th>
+            </tr>
+            <tr>
+              <th>ID NUMBER</th>
+              <th>:</th>
+              <th id="detail_idnumber"></th>
+            </tr>
+            <tr>
+              <th>NAMA BARANG</th>
+              <th>:</th>
+              <th id="detail_namabarang"></th>
+            </tr>
+            <tr>
+              <th>SPESIFIKASI</th>
+              <th>:</th>
+              <th id="detail_spesifikasi"></th>
+            </tr>
+            <tr>
+              <th>QTY</th>
+              <th>:</th>
+              <th id="detail_qty"></th>
+            </tr>
+            <tr>
+              <th>UNIT</th>
+              <th>:</th>
+              <th id="detail_unit"></th>
+            </tr>
+            <tr>
+              <th>NAMA REQUEST</th>
+              <th>:</th>
+              <th id="detail_namarequest"></th>
+            </tr>
+            <tr>
+              <th>DEPT</th>
+              <th>:</th>
+              <th id="detail_dept"></th>
+            </tr>
+            <tr>
+              <th>KRITERIA</th>
+              <th>:</th>
+              <th id="detail_kriteria"></th>
+            </tr>
+            <tr>
+              <th>KODE BUDGET</th>
+              <th>:</th>
+              <th id="detail_kodebudget"></th>
+            </tr>
+            <tr>
+              <th>STATUS</th>
+              <th>:</th>
+              <th id="detail_status"></th>
+            </tr>
+            <tr>
+              <th>KATEGORI</th>
+              <th>:</th>
+              <th id="detail_kategori"></th>
+            </tr>
+            <tr>
+              <th>TO</th>
+              <th>:</th>
+              <th id="detail_to"></th>
+            </tr>
+            <tr>
+              <th>STATUS SC1</th>
+              <th>:</th>
+              <th id="detail_statussc1"></th>
+            </tr>
+            {% if status_sc1 == 'PO' %}
+            <tr>
+              <th>NO PO</th>
+              <th>:</th>
+              <th id="detail_nopo"></th>
+            </tr>
+            {% else %}
+
+            {% endif %}
+
+            {% if level_user == '2' %}
+            
+            {% else %}
+            <tr>
+              <th>CURRENCY</th>
+              <th>:</th>
+              <th id="detail_currency"></th>
+            </tr>
+            <tr>
+              <th>PRICE</th>
+              <th>:</th>
+              <th id="detail_price"></th>
+            </tr>
+            {% endif %}
+            <tr>
+              <th>SUPLIER</th>
+              <th>:</th>
+              <th id="detail_suplier"></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        
+        
+      </div>
+      
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal Delete -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteModalLabel">Hapus Data</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Pesan akan diinput disini-->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-danger btn-confirm-delete">Hapus</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Edit-->
+<div class="modal fade" id="formModalEdit" tabindex="-1" role="dialog" aria-labelledby="tambahModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title" id="tambahModalLabel">Edit Data</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      
+      <form id="form-Edit-data" class="needs-validation" novalidate>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <input type="hidden" id="originalData" name="originalData" value="">
+                <input type="hidden" class="form-control idEdit" id="idEdit">
+                <label>Tanggal Pengajuan:</label>
+                <div class="input-group date" id="tanggalpengajuanEditDiv" data-target-input="nearest">
+                    <input type="text" class="form-control datetimepicker-input" id="tanggalpengajuanEdit" name="tanggalpengajuanEdit" data-target="#tanggalpengajuanEditDiv"/>
+                    <div class="input-group-append" data-target="#tanggalpengajuanEditDiv" data-toggle="datetimepicker">
+                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                    </div>
+                    <div class="invalid-feedback inv-tanggalpengajuanEdit-0">
+                      Harus diisi.
+                    </div>
+                    <div class="valid-feedback tanggalpengajuanEdit">
+                      Valid!
+                    </div>
+                </div>
+            </div>           
+            <div class="form-group">
+              <label for="idnumberEdit">ID Number :</label>
+              <input type="text" class="form-control idnumberEdit" id="idnumberEdit" placeholder="Masukkan id number" required autocomplete="off">
+              <div class="invalid-feedback inv-idnumberEdit-0">
+                Nomor Asset tidak boleh kosong.
+              </div>
+              <div class="valid-feedback idnumberEdit">
+                Valid!
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="namabarangEdit">Nama Barang :</label>
+              <input type="text" class="form-control namabarangEdit" id="namabarangEdit" nama="namabarangEdit" placeholder="Masukkan nama barang" required autocomplete="off">
+              <div class="invalid-feedback inv-namabarangEdit-0">
+                Harus diisi.
+              </div>
+              <div class="valid-feedback namabarangEdit">
+                Valid!
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="spesifikasiEdit">Spesifikasi :</label>
+              <input type="text" class="form-control spesifikasiEdit" id="spesifikasiEdit" placeholder="Masukkan spesifikasi" required autocomplete="off">
+              <div class="invalid-feedback inv-spesifikasiEdit-0">
+                Harus diisi.
+              </div>
+              <div class="valid-feedback spesifikasiEdit">
+                Valid!
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="qtyEdit">QTY :</label>
+              <input type="text" class="form-control qtyEdit" id="qtyEdit" name="qtyEdit" placeholder="Masukkan QTY" required autocomplete="off">
+              <div class="invalid-feedback inv-qtyEdit-0">
+                Harus diisi.
+              </div>
+              <div class="valid-feedback qtyEdit">
+                Valid!
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="unitEdit">Unit / Satuan :</label>
+              <input type="text" class="form-control unitEdit" id="unitEdit" nama="unitEdit" placeholder="Masukkan unit" required autocomplete="off">
+              <div class="invalid-feedback inv-unitEdit-0">
+                Harus diisi.
+              </div>
+              <div class="valid-feedback unitEdit">
+                Valid!
+              </div>
+            </div> 
+            <div class="form-group">
+              <label for="namarequestEdit">Nama Request :</label>
+              <input type="text" class="form-control namarequestEdit" id="namarequestEdit" nama="namarequestEdit" placeholder="Masukkan Nama Anda" required autocomplete="off">
+              <div class="invalid-feedback inv-namarequestEdit-0">
+                Harus diisi.
+              </div>
+              <div class="valid-feedback namarequestEdit">
+                Valid!
+              </div>
+            </div> 
+            <div class="form-group">
+              <label>Dept :</label>
+              <select id="deptEdit" name="deptEdit"  class="form-control" style="width: 100%;">
+                <option selected disabled value=""></option>
+                <option>ACC</option>
+                <option>AKN</option>
+                <option>AQ1</option>
+                <option>AQ3</option>
+                <option>AQ5</option>
+                <option>BKL</option>
+                <option>BOSS</option>
+                <option>CNC</option>
+                <option>D1</option>
+                <option>EXP</option>
+                <option>F1</option>
+                <option>F3</option>
+                <option>F4</option>
+                <option>F5</option>
+                <option>FIN</option>
+                <option>FN1</option>
+                <option>HRD</option>
+                <option>LS</option>
+                <option>M</option>
+                <option>OTHER</option>
+                <option>PRF</option>
+                <option>QA</option>
+                <option>SAP</option>
+                <option>SC1</option>
+                <option>SC2</option>
+                <option>SPD1</option>
+                <option>SPD2</option>
+                <option>UV1</option>
+                <option>UV2</option>
+                <option>UV3</option>
+                <option>YD1</option>
+              </select>
+              <div class="invalid-feedback inv-deptEdit-0">
+                Harus diisi.
+              </div>
+              <div class="valid-feedback deptEdit">
+                  Valid!
+              </div>
+            </div>
+            
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="kriteriaEdit">Kriteria :</label>
+                <select id="kriteriaEdit" name="kriteriaEdit" class="form-control kriteriaEdit" required>
+                  <option selected disabled value=""></option>
+                  <option>BUFFER STOCK</option>
+                  <option>PROJECT</option>
+                  <option>NEW ITEM</option>
+                </select>
+                <div class="invalid-feedback inv-kriteriaEdit-0">
+                  Harus diisi.
+                </div>
+                <div class="valid-feedback kriteriaEdit">
+                    Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="kodebudgetEdit">Kode Budget :</label>
+                <input type="text" class="form-control kodebudgetEdit" id="kodebudgetEdit" nama="kodebudgetEdit" placeholder="Masukkan kodebudget" required autocomplete="off">
+                <div class="invalid-feedback inv-kodebudgetEdit-0">
+                  Harus diisi.
+                </div>
+                <div class="valid-feedback kodebudgetEdit">
+                  Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="statusEdit">Status :</label>
+                <select id="statusEdit" class="form-control statusEdit" required>
+                  <option selected disabled value=""></option>
+                  <option>RFQ</option>
+                  <option>ORDER</option>
+                </select>
+                <div class="invalid-feedback inv-statusEdit-0">
+                  Harus diisi.
+                </div>
+                <div class="valid-feedback statusEdit">
+                  Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="kategoriEdit">Kategori :</label>
+                <select id="kategoriEdit" class="form-control kategoriEdit" required>
+                    <option selected disabled value=""></option>
+                    <option>URGENT</option>
+                    <option>NON URGENT</option>
+                </select>
+                <div class="invalid-feedback inv-kategoriEdit-0">
+                    Harus diisi.
+                </div>
+                <div class="valid-feedback kategoriEdit">
+                    Valid!
+                </div>
+            </div>
+            
+            <div class="form-group" id="detailkategori" style="display:none">
+                <label for="detailkategoriEdit">Keterangan Urgent :</label>
+                <textarea class="form-control detailkategoriEdit" id="detailkategoriEdit" placeholder="" required></textarea>
+                <div class="invalid-feedback inv-detailkategoriEdit-0">
+                    Harus diisi.
+                </div>
+                <div class="valid-feedback detailkategoriEdit">
+                    Valid!
+                </div>
+            </div>
+              <div class="form-group">
+                <label for="toEdit">to :</label>
+                <select id="toEdit" class="form-control toEdit" required>
+                  <option selected disabled value=""></option>
+                  <option>IKA</option>
+                  <option>ICHA</option>
+                  <option>ILMIN</option>
+                  <option>NAFA</option>
+                  <option>YANTI</option>
+                </select>
+                <div class="invalid-feedback inv-toEdit-0">
+                  Harus diisi.
+                </div>
+                <div class="valid-feedback toEdit">
+                  Valid!
+                </div>
+              </div>
+              <div class="form-group row">
+                <div class="col-md-4">
+                  <label for="inputState statussc1Edit">Status SC1 :</label>
+                  <select id="statussc1Edit" class="form-control statussc1Edit" required>
+                    <option selected value="New">NEW</option>
+                    <option>RECEIVED</option>
+                    <option>PO</option>
+                    <option>WAIT</option>
+                  </select>
+                  <div class="invalid-feedback inv-statussc1Edit-0">
+                    Harus diisi.
+                  </div>
+                  <div class="valid-feedback statussc1Edit">
+                    Valid!
+                  </div>
+                </div>
+                <div class="col-md-8">
+                  <label for="nopoEdit">No PO:</label>
+                  <div class="input-group">
+                    <input type="text" class="form-control nopoEdit" id="nopoEdit" nama="nopoEdit" placeholder="Masukan No PO" required autocomplete="off">
+                    <div class="invalid-feedback inv-nopoEdit-0">
+                      Harus diisi.
+                    </div>
+                    <div class="invalid-feedback inv-nopoEdit-1">
+                      Maksimal 5 Karakter.
+                    </div>
+                    <div class="valid-feedback nopoEdit">
+                      Valid!
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group row">
+                <div class="col-md-4">
+                  <label for="currencyEdit">Currency:</label>
+                  <select class="form-control" id="currencyEdit" name="currencyEdit">
+                    <option value=""></option>
+                    <option value="IDR">IDR</option>
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                    <option value="NTD">NTD</option>
+                    <option value="CNY">CNY</option>
+                  </select>
+                </div>
+                <div class="col-md-8">
+                  <label for="priceEdit">Price:</label>
+                  <div class="input-group">
+                    <span id="currency-symbol-edit" class="input-group-text currency-symbol"></span>
+                    <input type="number" class="form-control" id="priceEdit"  name="priceEdit" placeholder="Masukkan price" required autocomplete="off">
+                    <div class="invalid-feedback inv-priceEdit-0">
+                      Harus diisi.
+                    </div>
+                    <div class="invalid-feedback inv-priceEdit-1">
+                      Maksimal 5 Karakter.
+                    </div>
+                    <div class="valid-feedback priceEdit">
+                      Valid!
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              
+              <div class="form-group">
+                <label for="suplierEdit">Suplier :</label>
+                <input type="text" class="form-control suplierEdit" id="suplierEdit"  name="suplierEdit" placeholder="Masukkan nama suplier" required autocomplete="off">
+                <div class="invalid-feedback inv-suplierEdit-0">
+                  Harus diisi.
+                </div>
+                <div class="invalid-feedback inv-suplierEdit-1">
+                  Maksimal 5 Karakter.
+                </div>
+                <div class="valid-feedback suplierEdit">
+                  Valid!
+                </div>
+              </div>
+              
+            </div>
+          </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-warning">Simpan Perubahan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal Denied Edit and Delete -->
+<div class="modal fade" id="deniedModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true" style="z-index: 1050;">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deniedModalLabel">Hapus Data</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Pesan akan diinput disini-->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Ok</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Alert-->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="false" style="position: fixed; top: 0; right: 0; margin: 0; transform: translate(0, 0); pointer-events: none; z-index: 1050;">
+  <div class="modal-dialog modal-sm" role="document" style="margin-top: 10px; margin-right: 25px; pointer-events: auto;">
+    <div class="modal-content" style="background-color: white; border-radius: 0; pointer-events: auto;">
+      <div class="alert d-flex align-items-center" role="alert" style="border-radius: 0; margin: 0;">
+        <i class="fas fa-check-circle mr-2"></i> <span id="message">Dokumen berhasil dibuat.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+{% endblock %}
+{% block scripts %}
+  {{ super() }}
+    <!-- All JavaScript khusus halaman ini --> 
+    <script src="{{ url_for('static', filename='plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <!-- DataTables  & Plugins -->
+    <script src="{{ url_for('static', filename='plugins/datatables/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-responsive/js/dataTables.responsive.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-responsive/js/responsive.bootstrap4.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/dataTables.buttons.min.js') }}"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.flash.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.6/js/dataTables.buttons.min.js"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.bootstrap4.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/jszip/jszip.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/pdfmake/pdfmake.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/pdfmake/vfs_fonts.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.html5.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.print.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.colVis.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/select2/js/select2.min.js') }}"></script>
+
+  
+      <!-- Date-range-picker -->
+      <script src="{{ url_for('static', filename='plugins/moment/moment.min.js') }}"></script>
+      <script src="{{ url_for('static', filename='plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js') }}"></script>
+    <!-- Control Full Page Khusus Page ini-->
+    <script src="{{ url_for('send_js', path='formgeneralorder.js') }}"></script>
+
+{% endblock %}

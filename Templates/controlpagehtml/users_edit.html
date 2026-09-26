@@ -1,0 +1,425 @@
+{% extends 'base/base.html' %}
+{% block title %}{{ titlePage }}{% endblock %}
+{% block head %}
+{{ super() }}
+<!-- CSS khusus halaman ini -->
+
+<!-- DataTables -->
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/datatables-responsive/css/responsive.bootstrap4.min.css') }}"> 
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/datatables-buttons/css/buttons.bootstrap4.min.css') }}"> 
+<link rel="stylesheet" href="{{ url_for('static', filename='adminlte/adminlte.min.css') }}">
+<!-- Load Bootstrap CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.5.6/css/buttons.dataTables.min.css">
+{% endblock %}
+{% block content %}
+<!--  ------------ ------------ ------------Isi content halaman ini------------ ------------ ------------ -->
+
+  <div class="content-wrapper">
+  <!-- Content Header (Page header) -->
+  <section class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-left">
+            <li class="breadcrumb-item"><a href="#">Settings</a></li>
+            <li class="breadcrumb-item active">Users</li>
+          </ol>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-right">
+            <li><a href="#"> Automatic Log out :&nbsp;</a></li>
+            <li><span id="timer">00:00:00</span></li>
+          </ol>
+        </div>
+      </div>
+    </div><!-- /.container-fluid -->
+  </section>
+
+  <!-- Main content -->
+  <section class="content">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Form Edit Data Users</h2>
+            </div>
+            <!-- /.card-header -->
+            <div class="card-body">
+              
+              <form action="{{ url_for('users_bp.edit_user', user_id=user[0]) }}" method="post">
+                <input type="hidden" name="user_id" value="{{ user[0] }}">
+                <div class="form-group">
+                  <label for="nama">Nama:</label>
+                  <input type="text" id="inputNama" name="inputNama" class="form-control" value="{{ user[1].strip() }}">
+                </div>
+                <div class="form-group">
+                  <label for="username">Username:</label>
+                  <input type="text" id="username" name="username" class="form-control" value="{{ user[2].strip() }}">
+                </div>
+                <div class="form-group">
+                  <label for="password">Password:</label>
+                  <input type="password" id="password" name="password" class="form-control" placeholder="Input password baru">
+                </div>
+                <div class="form-group">
+                  <label for="level_user">Level Pengguna:</label>
+                  <select id="level_user" name="level_user" class="form-control">
+                    <option value="1" {% if user[4] == "1" %}selected{% endif %}>Admin</option>
+                    <option value="2" {% if user[4] == "2" %}selected{% endif %}>User</option>
+                    <option value="3" {% if user[4] == "3" %}selected{% endif %}>SC1</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="email">Email:</label>
+                  <input type="email" id="email" name="email" class="form-control" value="{{ user[5] }}">
+                </div>
+                <div class="form-group">
+                  <input type="submit" value="Simpan Perubahan" class="btn btn-primary">
+                </div>
+              </form>
+              
+
+            </div>
+            <!-- /.card-body -->
+          </div>
+          <!-- /.card -->
+        </div>
+        <!-- /.col -->
+      </div>
+      <!-- /.row -->
+    </div>
+    <!-- /.container-fluid -->
+  </section>
+  <!-- /.content -->
+</div>
+<!-- /.content-wrapper -->
+<!-- Modal Tambah-->
+<div class="modal fade" id="formModal" tabindex="-1" role="dialog" aria-labelledby="tambahModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="tambahModalLabel">Tambah Data</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      
+      <form id="form-tambah-data" class="needs-validation" novalidate>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="nomor-dokumen">Nomor Dokumen :</label>
+                <input type="text" class="form-control nomor-dokumen" id="nomordokumen" placeholder="Masukkan nomor dokumen" required autocomplete="off">
+                <div class="invalid-feedback inv-nomordokumen-0">
+                  Nomor Dokumen tidak boleh kosong.
+                </div>
+                <div class="invalid-feedback inv-nomordokumen-1">
+                  Harus berupa angka.
+                </div>
+                <div class="invalid-feedback inv-nomordokumen-2">
+                  Harus terdiri 9 angka
+                </div>
+                <div class="valid-feedback nomordokumen">
+                  Valid!
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="tipe-dokumen">Tipe Dokumen:</label>
+                <input type="text" class="form-control tipe-dokumen" id="tipedokumen" placeholder="Masukkan tipe dokumen" required autocomplete="off">
+                <div class="invalid-feedback inv-tipedokumen-0">
+                  Tipe Dokumen idak boleh kosong.
+                </div>
+                <div class="invalid-feedback inv-tipedokumen-1">
+                  Harus 2 huruf.
+                </div>
+                <div class="valid-feedback tipedokumen">
+                  Valid!
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="inputState">Kategori :</label>
+                <select id="kategori" class="form-control" required>
+                  <option selected disabled value=""></option>
+                  <option>Salah Input</option>
+                  <option>System Error</option>
+                  <option>Lain-lain</option>
+                </select>
+                <div class="invalid-feedback inv-kategori-0">
+                  Kategori harus diisi.
+                </div>
+                <div class="valid-feedback kategori">
+                  Valid!
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="nama">Nama:</label>
+                <input type="text" class="form-control" id="nama" nama="nama" placeholder="Masukkan nama anda" required autocomplete="off">
+                <div class="invalid-feedback inv-nama-0">
+                  Nama harus diisi.
+                </div>
+                <div class="valid-feedback nama">
+                  Valid!
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="dept">Dept:</label>
+                <input type="text" class="form-control" id="dept"  name="dept" placeholder="Masukkan dept anda" required autocomplete="off">
+                <div class="invalid-feedback inv-dept-0">
+                  Dept harus diisi.
+                </div>
+                <div class="invalid-feedback inv-dept-1">
+                  Maksimal 3 Karakter.
+                </div>
+                <div class="valid-feedback dept">
+                  Valid!
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="inputState">Status :</label>
+                <select id="status" class="form-control" required>
+                  <option selected disabled value=""></option>
+                  <option>Pending</option>
+                  <option>Success</option>
+                </select>
+                <div class="invalid-feedback inv-status-0">
+                  Status harus diisi.
+                </div>
+                <div class="valid-feedback status">
+                  Valid!
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-12">
+              <div class="form-group">
+                <label for="alasan-void">Alasan Void:</label>
+                <textarea class="form-control" id="alasan-void" placeholder="Masukkan alasan minta void" required></textarea>
+                <div class="invalid-feedback inv-alasanvoid-0">
+                  Alasan Void harus diisi.
+                </div>
+                <div class="valid-feedback alasanvoid">
+                  Valid!
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Edit-->
+<div class="modal fade" id="formModalEdit" tabindex="-1" role="dialog" aria-labelledby="tambahModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title" id="tambahModalLabel">Edit Data</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      
+      <form id="form-Edit-data" class="needs-validation" novalidate>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-12">
+              <div id="myAlert" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <strong>Hai-hai !</strong>  Setelah status berganti "success", data tidak dapat dirubah lagi.
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            </div>
+            <div class="col-md-6">
+              <input type="hidden" id="originalData" name="originalData" value="">
+              <input type="hidden" name="editvoidid" id="editvoidid" value="">
+              <div class="form-group">
+                <label for="nomor-dokumen">Nomor Dokumen :</label>
+                <input type="text" class="form-control nomor-dokumen" id="editnomordokumen" placeholder="Masukkan nomor dokumen" required autocomplete="off">
+                <div class="invalid-feedback inv-nomordokumen-0">
+                  Nomor dokumen tidak boleh kosong.
+                </div>
+                <div class="invalid-feedback inv-nomordokumen-1">
+                  Harus berupa angka.
+                </div>
+                <div class="invalid-feedback inv-nomordokumen-2">
+                  Harus terdiri 9 angka
+                </div>
+                <div class="valid-feedback editnomordokumen">
+                  Valid!
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="tipe-dokumen">Tipe Dokumen:</label>
+                <input type="text" class="form-control tipe-dokumen" id="edittipedokumen" placeholder="Masukkan tipe dokumen" required autocomplete="off">
+                <div class="invalid-feedback inv-tipedokumen-0">
+                  Tidak boleh kosong.
+                </div>
+                <div class="invalid-feedback inv-tipedokumen-1">
+                  Harus 2 huruf.
+                </div>
+                <div class="valid-feedback edittipedokumen">
+                  Valid!
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="inputState">Kategori :</label>
+                <select id="editkategori" class="form-control" required>
+                  <option selected disabled value=""></option>
+                  <option>Salah Input</option>
+                  <option>System Error</option>
+                  <option>Lain-lain</option>
+                </select>
+                <div class="invalid-feedback inv-kategori-0">
+                  Kategori harus diisi.
+                </div>
+                <div class="valid-feedback editkategori">
+                  Valid!
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="form-group">
+                <label for="nama">Nama:</label>
+                <input type="text" class="form-control" id="editnama" nama="editnama" required>
+                <div class="invalid-feedback inv-nama-0">
+                  Nama harus diisi.
+                </div>
+                <div class="valid-feedback editnama">
+                  Valid!
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="dept">Dept:</label>
+                <input type="text" class="form-control" id="editdept"  name="editdept" required>
+                <div class="invalid-feedback inv-dept-0">
+                  Dept harus diisi.
+                </div>
+                <div class="invalid-feedback inv-dept-1">
+                  Maksimal 3 Karakter.
+                </div>
+                <div class="valid-feedback editdept">
+                  Valid!
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="inputState">Status :</label>
+                <select id="editstatus" class="form-control" required>
+                  <option selected disabled value=""></option>
+                  <option>Pending</option>
+                  <option>Success</option>
+                </select>
+                <div class="invalid-feedback inv-status-0">
+                  Status harus diisi.
+                </div>
+                <div class="valid-feedback editstatus">
+                  Valid!
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-12">
+              <div class="form-group">
+                <label for="alasan-void">Alasan Void:</label>
+                <textarea class="form-control" id="editalasan-void" required></textarea>
+                <div class="invalid-feedback inv-alasanvoid-0">
+                  Alasan Void harus diisi.
+                </div>
+                <div class="valid-feedback editalasanvoid">
+                  Valid!
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-warning">Simpan Perubahan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Delete -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteModalLabel">Hapus Data</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Pesan akan diinput disini-->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-danger btn-confirm-delete">Hapus</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Alert-->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="false" style="position: fixed; top: 0; right: 0; margin: 0; transform: translate(0, 0); pointer-events: none;">
+  <div class="modal-dialog modal-sm" role="document" style="margin-top: 10px; margin-right: 25px; pointer-events: auto;">
+    <div class="modal-content" style="background-color: white; border-radius: 0; pointer-events: auto;">
+      <div class="alert d-flex align-items-center" role="alert" style="border-radius: 0; margin: 0;">
+        <i class="fas fa-check-circle mr-2"></i> <span id="message">Dokumen berhasil dibuat.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+  {{ super() }}
+    <!-- All JavaScript khusus halaman ini --> 
+    <!-- jQuery 
+    <script src="{{ url_for('static', filename='plugins/jquery/jquery.min.js') }}"></script> -->
+    <!-- Bootstrap 4 -->
+    <script src="{{ url_for('static', filename='plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <!-- DataTables  & Plugins -->
+    <script src="{{ url_for('static', filename='plugins/datatables/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-responsive/js/dataTables.responsive.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-responsive/js/responsive.bootstrap4.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/dataTables.buttons.min.js') }}"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.flash.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.6/js/dataTables.buttons.min.js"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.bootstrap4.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/jszip/jszip.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/pdfmake/pdfmake.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/pdfmake/vfs_fonts.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.html5.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.print.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.colVis.min.js') }}"></script>
+    
+    <!-- Date-range-picker di tgl update-->
+    <script src="{{ url_for('static', filename='plugins/moment/moment.min.js') }}"></script>
+    <!-- Control Full Page Khusus Permintaan Void-->
+    <script src="{{ url_for('send_js', path='permintaan-void.js') }}"></script>
+
+{% endblock %}

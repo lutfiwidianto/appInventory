@@ -1,0 +1,47 @@
+# Virtual Environments
+env/
+venv/
+.env/
+ENV/
+
+# Python cache & bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Logs and runtime artifacts
+*.log
+server.log
+error.log
+backup.log
+*.pid
+server.pid
+bot.pid
+
+# Large binary archives & backups
+*.zip
+*.bak
+*.tmp
+*.rar
+*.7z
+*.pdf
+appInventory.zip
+
+# Binary executables
+bin/*.exe
+bin/
+
+# Temporary & user uploads
+uploads/
+uploads/*
+
+# IDE & OS files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+Thumbs.db
+Desktop.ini
+desktop.ini
+.DS_Store

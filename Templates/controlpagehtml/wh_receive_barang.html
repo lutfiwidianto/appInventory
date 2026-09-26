@@ -1,0 +1,468 @@
+{% extends 'base/base.html' %}
+{% block title %}{{ titlePage }}{% endblock %}
+{% block head %}
+{{ super() }}
+<!-- CSS khusus halaman ini -->
+
+<!-- DataTables -->
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') }}">
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/datatables-responsive/css/responsive.bootstrap4.min.css') }}">
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/datatables-buttons/css/buttons.bootstrap4.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='adminlte/adminlte.min.css') }}">
+<!-- Load Bootstrap CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.5.6/css/buttons.dataTables.min.css">
+<!-- Datetimepicker -->
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css') }}">
+<!-- Custome CSS Datatable-->
+<style>
+  #example1 td:nth-child(6),
+  #example1 td:nth-child(9),
+  #example1 td:nth-child(11) {
+    white-space: nowrap;
+  }
+
+  .modal-dialog.custom {
+    max-width: 1800px;
+  }
+
+  .modal-body {
+    max-width: 1800px;
+    overflow-x: auto;
+  }
+
+
+  /* Upload Gambar */
+
+  .input-with-image {
+    display: flex;
+    align-items: center;
+    max-width: 300px;
+    /* Atur lebar maksimum sesuai kebutuhan Anda */
+  }
+
+  .input-with-image input[type="file"] {
+    flex: 1;
+    margin-right: 10px;
+  }
+
+  .input-with-image img {
+    max-width: 100px;
+    max-height: 100px;
+    border: 1px solid #ccc;
+    /* Tambahkan gaya border yang diinginkan */
+  }
+
+  .input-with-image .preview-text {
+    display: none;
+  }
+</style>
+
+{% endblock %}
+{% block content %}
+<!--  ------------ ------------ ------------Isi content halaman ini------------ ------------ ------------ -->
+
+<div class="content-wrapper">
+  <!-- Content Header (Page header) -->
+  <section class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-left">
+            <li class="breadcrumb-item"><a href="#">DEPARTEMEN WAREHOUSE</a></li>
+            <li class="breadcrumb-item active">ALL Receive Barang</li>
+          </ol>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-right">
+            <li><a href="#"> Automatic Log out :&nbsp;</a></li>
+            <li><span id="timer">00:00:00</span></li>
+          </ol>
+        </div>
+      </div>
+    </div><!-- /.container-fluid -->
+  </section>
+
+  <!-- Main content -->
+  <section class="content">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Data ALL Receive Barang</h2>
+              <button type="button" class="btn btn-primary float-right" data-toggle="modal" data-target="#formModal">
+                Tambah Data </button>
+              <button type="button" id="btnRefresh" class="btn btn-success float-right" style="margin-right: 20px;">
+                Refresh
+              </button>
+              <!-- <button type="button" onclick="showAlert()" class="btn btn-primary">Tampilkan Alert</button> -->
+
+              <button type="text" id="btnMasihDipinjam" class="btn float-right"
+                style="margin-right: 60px; cursor: default; background-color: #dd9295; display: none;">
+                Item Menunggu Dok Dari Purchasing
+              </button>
+
+            </div>
+            <!-- /.card-header -->
+            <div class="card-body">
+
+              <table id="example1" class="table table-bordered table-responsive" style="width: 100%;">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>NO PR</th>
+                    <th>TANGGAL RECEIVE</th>
+                    <th>NO RN</th>
+                    <th>KODE BARANG</th>
+                    <th>NAMA BARANG</th>
+                    <th>QTY</th>
+                    <th>SATUAN</th>
+                    <th>SUPLIER</th>
+                    <th>KETERANGAN</th>
+                    <th>KATEGORI BARANG</th>
+                    <th>DOK. INVOICE</th>
+                    <th>DOK. SURAT JALAN</th>
+                    <th>DOK. PACKING LIST</th>
+                    <th>DOK. BC</th>
+                    <th>DOK. SPPB</th>
+                    <th>NOMER DAFTAR</th>
+                    <th>STATUS</th>
+                    <th style="width: 80px; justify-content: center; text-align: center;">AKSI</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Data rows will be inserted here by your code -->
+                </tbody>
+              </table>
+            </div>
+            <!-- /.card-body -->
+          </div>
+          <!-- /.card -->
+        </div>
+        <!-- /.col -->
+      </div>
+      <!-- /.row -->
+    </div>
+    <!-- /.container-fluid -->
+  </section>
+  <!-- /.content -->
+</div>
+<!-- /.content-wrapper -->
+
+<!-- Modal Denied Edit and Delete -->
+<div class="modal fade" id="deniedModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deniedModalLabel">Hapus Data</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Pesan akan diinput disini-->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Ok</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Tambah -->
+<div class="modal fade" id="formModal" tabindex="-1" role="dialog" aria-labelledby="tambahModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered custom" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="tambahModalLabel">Form Input Receive Barang</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="form-Tambah-data" class="needs-validation" novalidate>
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-md-2">
+                <div class="form-group">
+                  <label>Tanggal Receive :</label>
+                  <div class="input-group date" id="tanggalprbarangDiv" data-target-input="nearest">
+                    <input type="text" class="form-control col-6 datetimepicker-input" id="tanggalrcbarang"
+                      name="tanggalprbarang" data-target="#tanggalprbarangDiv" autocomplete="off" />
+                    <div class="input-group-append" data-target="#tanggalprbarangDiv" data-toggle="datetimepicker">
+                      <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-2"></div>
+              <div class="form-group">
+                <label for="jenisbarangtambahMasuk">Jenis Barang :</label>
+                <select id="jenisbarangtambahMasuk" name="jenisbarangtambahMasuk" class="form-control">
+                  <option value="LOKAL">LOKAL</option>
+                  <option value="IMPOR">IMPOR</option>
+                </select>
+              </div>
+              <div class="col-md-2"></div>
+
+              <div class="row align-items-center">
+                <div class="form-group">
+                  <label for="depannomorrcMasuk">Nomor BPB / Referensi</label>
+                  <div class="d-flex">
+                    <input type="text" class="form-control col-6" style="text-align: right;" id="depannomorrcMasuk"
+                      style="text-align: left;" placeholder="" required disabled>
+                    <input type="text" class="form-control col-4" id="isinomorrcMasuk" style="text-align: left;"
+                      placeholder="" autocomplete="off" required>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+            <div class="col-md-2"></div>
+            <div class="col"></div>
+          </div>
+          <div id="containerfluid" class="scrolling-wrapper container-fluid" style="overflow-x: auto;">
+            <!-- Penambahan Item Disini-->
+            <!--
+              <div id="itemContainer${counter}" class="row flex-row flex-nowrap mt-4 pb-4 pt-2" style="display: flex;">
+                <div class="col-3 item-row">
+                  <label>KODE BARANG :</label>
+                  <input type="text" class="form-control kode-barang" id="kode-barang-${counter}" name="kode-barang-${counter}" placeholder="Masukkan Kode Barang" required autocomplete="off">
+                </div>
+                <div class="col-3 item-row">
+                  <label>NAMA BARANG :</label>
+                  <input type="text" class="form-control nama-barang" id="nama-barang-${counter}" name="nama-barang-${counter}" placeholder="" required autocomplete="off" disabled>
+                </div>
+                <div class="col-2 item-row">
+                  <label>QTY PR :</label>
+                  <input type="text" class="form-control qty-pr" id="qty-pr-${counter}" name="qty-pr-${counter}" placeholder="Masukkan Qty PR" required autocomplete="off">
+                </div>
+                <div class="col-1 item-row">
+                  <label>SATUAN :</label>
+                  <input type="text" class="form-control satuan" id="satuan-${counter}" name="satuan-${counter}" placeholder="" required autocomplete="off" disabled>
+                </div>
+                <div class="col-1 item-row">
+                  <label>STATUS :</label>
+                <select id="status-${counter}" name="status-${counter}" class="form-control" style="width: 100%;">
+                  <option selected disabled value="Pending">Pending</option>
+                </select>
+                </div>
+                <div class="col-3 item-row">
+                  <label>KETERANGAN :</label>
+                  <textarea class="form-control keterangan" id="keterangan-${counter}" name="keterangan-${counter}" placeholder="Masukkan Keterangan" required autocomplete="off"></textarea>
+                </div>
+                <div class="col-1 item-row">
+                  <br>
+                  <button class="hapus-item btn btn-danger" onclick="hapusItem('itemContainer${counter}')" style="cursor: pointer;">
+                  <i class="fas fa-times"></i> Hapus Baris
+                  </button>
+                </div>
+                </div>
+              -->
+          </div>
+
+          <br>
+          <div class="col-md-12">
+            <button type="button" id="tambahItemBtnPr" class="btn btn-primary">Tambah Item</button>
+          </div>
+          <br>
+          <div id="pesanContainer">
+            <div id="pesanAlert" class="alert alert-danger alert-dismissible fade show" role="alert">
+              <strong>Data tidak valid. Silakan periksa kembali.</strong>
+              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+            <button id="submitButton" type="submit" class="btn btn-primary">
+              <i class="fab fa-telegram"></i> Tambah
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal edit -->
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered custom" role="document" style="max-width: 400px;">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title" id="editModalLabel">Masukkan Dokumen Pelengkap</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body" style="max-height: 800px; overflow-y: auto;">
+        <form id="form-edit-data" class="needs-validation" novalidate>
+          <div class="form-group">
+            <input type="hidden" class="form-control" id="idEdit" name="idEdit" placeholder="" autocomplete="off">
+            <input type="hidden" class="form-control" id="namaDokumen" name="namaDokumen" placeholder=""
+              autocomplete="off" disabled>
+          </div>
+          <!-- Tambahkan kode untuk menampilkan pesan peringatan -->
+          <div class="alert alert-danger" role="alert" id="fileUploadAlert" style="display: none; text-align: center;">
+            <span style="font-weight: bold; font-style: italic;">Harap pilih setidaknya satu file</span> untuk
+            di-upload.
+          </div>
+          <div class="form-group">
+            <label for="dokInvoice">DOK. INVOICE</label>
+            <div id="btn-upload-dok-invoice" class="input-with-image">
+              <input type="file" class="form-control-file" id="dokInvoice" name="dokInvoice" accept="application/pdf"
+                onchange="previewPdf(event, 'thumbnailInvoiceCanvas')" style="width: 200px;">
+              <canvas id="thumbnailInvoiceCanvas" style="max-width: 150px; max-height: 150px;"></canvas>
+              <span class="preview-text" style="font-size: 14px;">Preview</span>
+            </div>
+            <p id="txt-upload-dok-invoice" style="color: green; font-style: italic; text-decoration: underline;">Dokumen sudah tersedia.</p>
+          </div>
+          <div class="form-group">
+            <label for="dokSuratJalan">DOK. SURAT JALAN</label>
+            <div id="btn-upload-dok-suratjalan" class="input-with-image">
+              <div>
+                <input type="file" class="form-control-file" id="dokSuratJalan" name="dokSuratJalan"
+                  accept="application/pdf" onchange="previewPdf(event, 'thumbnailSuratJalanCanvas')"
+                  style="width: 200px;">
+                <canvas id="thumbnailSuratJalanCanvas" style="max-width: 150px; max-height: 150px;"></canvas>
+                <span class="preview-text" style="font-size: 14px;">Preview</span>
+              </div>
+            </div>
+            <p id="txt-upload-dok-suratjalan" style="color: green; font-style: italic; text-decoration: underline;">Dokumen sudah tersedia.</p>
+          </div>
+          <div class="form-group">
+            <label for="dokPackingList">DOK. PACKING LIST</label>
+            <div id="btn-upload-dok-packinglist" class="input-with-image">
+              <input type="file" class="form-control-file" id="dokPackingList" name="dokPackingList"
+                accept="application/pdf" onchange="previewPdf(event, 'thumbnailPackingListCanvas')"
+                style="width: 200px;">
+              <canvas id="thumbnailPackingListCanvas" style="max-width: 150px; max-height: 150px;"></canvas>
+              <span class="preview-text" style="font-size: 14px;">Preview</span>
+            </div>
+            <p id="txt-upload-dok-packinglist" style="color: green; font-style: italic; text-decoration: underline;">Dokumen sudah tersedia.</p>
+          </div>
+          <div class="form-group">
+            <label for="dokBc">DOK. BC</label>
+            <div id="btn-upload-dok-bc" class="input-with-image">
+              <input type="file" class="form-control-file" id="dokBc" name="dokBc" accept="application/pdf"
+                onchange="previewPdf(event, 'thumbnailBcCanvas')" style="width: 200px;">
+              <canvas id="thumbnailBcCanvas" style="max-width: 150px; max-height: 150px;"></canvas>
+              <span class="preview-text" style="font-size: 14px;">Preview</span>
+            </div>
+            <p id="txt-upload-dok-bc" style="color: green; font-style: italic; text-decoration: underline;">Dokumen sudah tersedia.</p>
+          </div>
+
+          <div class="form-group">
+            <label for="dokSppb">DOK. SPPB</label>
+            <div id="btn-upload-dok-sppb" class="input-with-image">
+              <input type="file" class="form-control-file" id="dokSppb" name="dokSppb" accept="application/pdf"
+                onchange="previewPdf(event, 'thumbnailSppbCanvas')" style="width: 200px;">
+              <canvas id="thumbnailSppbCanvas" style="max-width: 150px; max-height: 150px;"></canvas>
+              <span class="preview-text" style="font-size: 14px;">Preview</span>
+            </div>
+            <p id="txt-upload-dok-sppb" style="color: green; font-style: italic; text-decoration: underline;">Dokumen sudah tersedia.</p>
+          </div>
+          <div class="form-group" id="formNomorAju" style="display: none;">
+            <label for="exampleFormControlInput1">NOMOR AJU</label>
+            <input type="text" class="form-control" id="nomorAju" name="nomorAju" placeholder="Masukkan Nomor Aju">
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="submit" id="tombolEdit" class="btn btn-warning">
+              <i class="fab fa-telegram"></i> Masukkan Dokumen
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal Delete -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteModalLabel">Hapus Data</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Pesan akan diinput disini-->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-danger btn-confirm-delete">Hapus</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Alert-->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="false"
+  style="position: fixed; top: 0; right: 0; margin: 0; transform: translate(0, 0); pointer-events: none;">
+  <div class="modal-dialog modal-sm" role="document"
+    style="margin-top: 10px; margin-right: 25px; pointer-events: auto;">
+    <div class="modal-content" style="background-color: white; border-radius: 0; pointer-events: auto;">
+      <div class="alert d-flex align-items-center" role="alert" style="border-radius: 0; margin: 0;">
+        <i class="fas fa-check-circle mr-2"></i> <span id="message">Dokumen berhasil dibuat.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<!-- All JavaScript khusus halaman ini -->
+<!-- Bootstrap 4 -->
+<script src="{{ url_for('static', filename='plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+<!-- DataTables  & Plugins -->
+<script src="{{ url_for('static', filename='plugins/datatables/jquery.dataTables.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
+<script
+  src="{{ url_for('static', filename='plugins/datatables-responsive/js/dataTables.responsive.min.js') }}"></script>
+<script
+  src="{{ url_for('static', filename='plugins/datatables-responsive/js/responsive.bootstrap4.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-buttons/js/dataTables.buttons.min.js') }}"></script>
+<script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.flash.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.5.6/js/dataTables.buttons.min.js"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.bootstrap4.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/jszip/jszip.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/pdfmake/pdfmake.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/pdfmake/vfs_fonts.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.html5.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.print.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.colVis.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.colVis.min.js') }}"></script>
+<!-- Menggunakan "pdf.js" dari CDN 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script> -->
+<script src="{{ url_for('static', filename='plugins/thumbnail-pdf/pdf.min.js') }}"></script>
+
+<!-- Mengatur jalur worker untuk PDF.js -->
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "{{ url_for('static', filename='plugins/thumbnail-pdf/pdf.worker.js') }}";
+</script>
+
+<!-- Date-range-picker -->
+<script src="{{ url_for('static', filename='plugins/moment/moment.min.js') }}"></script>
+<script
+  src="{{ url_for('static', filename='plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js') }}"></script>
+<!-- Control Full Page Khusus Permintaan IT-->
+<script src="{{ url_for('send_js', path='wh_receivebarang.js') }}"></script>
+
+{% endblock %}

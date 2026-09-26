@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Login App</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <!-- Fon Goolge-->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='plugins/fontawesome-free/css/all.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='loginCss/style.css') }}">
+  <style>
+    * {
+      padding: 0;
+      margin: 0;
+    }
+
+    .prifix_loading_box {
+      position: relative;
+      width: 200px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-evenly;
+    }
+
+    .prifix_loading_box span {
+      display: block;
+      height: 20px;
+      width: 20px;
+      background: #000;
+      border-radius: 50%;
+      animation: all-effect 0.6s linear infinite alternate;
+      transform: scale(0);
+    }
+
+    .prifix_loading_box span:nth-child(1) {
+      animation-delay: 0.1s;
+    }
+
+    .prifix_loading_box span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .prifix_loading_box span:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+
+    .prifix_loading_box span:nth-child(4) {
+      animation-delay: 0.4s;
+      background: #00b9f5;
+    }
+
+    .prifix_loading_box span:nth-child(5) {
+      animation-delay: 0.5s;
+      background: #00b9f5;
+    }
+
+    @keyframes all-effect {
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .form-control:focus {
+      box-shadow: 0 0 5px rgba(54, 122, 11, 0.2);
+      border-color: #76f84e;
+    }
+
+    /* Add this CSS for full-screen overlay */
+    .modal-fullscreen {
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-fullscreen .modal-content {
+      width: 100%;
+      max-width: none;
+      background: none;
+      border: none;
+      box-shadow: none;
+    }
+  </style>
+</head>
+
+<body>
+  <section class="ftco-section">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-md-12 col-lg-12">
+
+          <div class="wrap d-md-flex">
+
+            <div class="kiri-wrap p-4 p-md-5 d-flex flex-column justify-content-center align-items-center">
+              <h3 class="text-center" style="margin-bottom: 22px ;"><b>SELAMAT DATANG KEMBALI !</b></h3>
+              <h5 class="text-center" style="margin-bottom: 0px ;"><b>'APP IT INVENTORY'</b></h5>
+              <p class="h6 text-center" style="margin-bottom:7px ;">Make sure your aplication is scure</p>
+              <img src="{{ url_for('static', filename='img/people1.png') }}" class="img-fluid" alt="Sample image"
+                style="width:80%; height:60%; margin-bottom:20px;">
+            </div>
+            <div class="login-wrap p-4 p-md-5">
+              <!-- tambahkan alert di sini -->
+              <br><br>
+              <div class="text-center">
+                <br>
+                <img src="{{ url_for('static', filename='img/tct_logo.png') }}" class="img-fluid" alt="Sample image"
+                  style="width:20%; height:auto;">
+              </div>
+              <h5 class="text-center">PT TUNG CHIA TEKNOLOGY</h5>
+              <br>
+
+              <P>Silahkan masuk menggunakan username dan passwod anda.</P>
+              <div class="d-flex">
+              </div>
+              <div style="display: flex; justify-content: center; align-items: center; text-align: center;">
+                <div class="prifix_loading_box" id="loadingBox" style="display: none;"> <span></span> <span></span>
+                  <span></span> <span></span> <span></span> </div>
+              </div>
+              <div class="alert alert-danger" role="alert" id="loginAlert" style="display: none; height: 50px;">
+                Login gagal.
+              </div>
+              <form class="signin-form" id="login-form">
+
+                <div class="form-group mb-3">
+                  <div class="input-group">
+                    <input type="text" id="username" name="username" class="form-control" placeholder="Username"
+                      required>
+                    <div class="input-group-append">
+                      <span class="input-group-text bg-white"><i class="fas fa-user"></i></span>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group mb-3">
+                  <div class="input-group">
+                    <input type="password" id="password" name="password" class="form-control" placeholder="Password"
+                      required>
+                    <div class="input-group-append">
+                      <span class="input-group-text bg-white"><i class="fas fa-lock"></i></span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group d-md-flex">
+                  <div class="w-50 text-left">
+                    <label class="checkbox-wrap checkbox-primary mb-0">
+                      <input type="checkbox" id="remember_me" name="remember_me" value="true">
+                      <span class="checkmark"></span>
+                      Ingat saya
+                    </label>
+                  </div>
+                  <div class="w-50 text-md-right">
+                    <a href="https://wa.me/6285855955336?text=Username%3A%20%3Cmasukkan username anda%3E%0APassword%20Baru%3A%20%3Cganti dengan password baru yang anda inginkan%3E&phone=6287863516069"
+                      target="_blank">Lupa Password</a>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <button type="submit" class="form-control btn btn-primary rounded submit px-3" id="login-btn">LOGIN
+                  </button>
+                </div>
+              </form>
+
+              <p class="text-center">Bukan member? <a data-toggle="tab" href="#signup">Daftar</a></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Add this modal structure at the end of your body section -->
+
+  </section>
+  <script src="{{ url_for('static', filename='jquery/jquery-3.6.0.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/login/jquery.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/login/popper.js') }}"></script>
+  <script src="{{ url_for('static', filename='bootstrap/bootstrap.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/login/main.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/sweetalert2/sweetalert2.all.min.js') }}"></script>
+  <script>
+    // Helper function untuk encode/decode credential secara aman di localStorage
+    function encodeRememberedPassword(str) {
+      try {
+        return btoa(encodeURIComponent(str));
+      } catch (e) {
+        return str;
+      }
+    }
+
+    function decodeRememberedPassword(str) {
+      if (!str) return "";
+      try {
+        // Coba decode base64 standar
+        return decodeURIComponent(atob(str));
+      } catch (e) {
+        // Jika teks biasa pendek dan bukan sisa CryptoJS
+        if (str.length < 40 && !str.startsWith("U2FsdGVk")) {
+          return str;
+        }
+        // Jika corrupt / ciphertext lama CryptoJS yang tidak bisa didecode, kosongkan
+        return "";
+      }
+    }
+
+    function loadSavedCredentials() {
+      try {
+        const isRemembered = localStorage.getItem("remember_me") === "true";
+        const savedUsername = localStorage.getItem("username");
+        const savedPassword = localStorage.getItem("password");
+
+        if (isRemembered && savedUsername) {
+          const usernameInput = document.getElementById("username");
+          const passwordInput = document.getElementById("password");
+          const rememberCheckbox = document.getElementById("remember_me");
+
+          if (usernameInput) usernameInput.value = savedUsername;
+          if (passwordInput && savedPassword) {
+            const decoded = decodeRememberedPassword(savedPassword);
+            if (decoded) {
+              passwordInput.value = decoded;
+            } else {
+              localStorage.removeItem("password");
+            }
+          }
+          if (rememberCheckbox) rememberCheckbox.checked = true;
+        }
+      } catch (e) {
+        console.warn("Gagal memuat kredensial tersimpan:", e);
+      }
+    }
+
+    function handleRememberMeOnSubmit(username, password) {
+      try {
+        const rememberCheckbox = document.getElementById("remember_me");
+        if (rememberCheckbox && rememberCheckbox.checked) {
+          localStorage.setItem("username", username);
+          localStorage.setItem("password", encodeRememberedPassword(password));
+          localStorage.setItem("remember_me", "true");
+        } else {
+          localStorage.removeItem("username");
+          localStorage.removeItem("password");
+          localStorage.setItem("remember_me", "false");
+        }
+      } catch (e) {
+        console.warn("Gagal menyimpan remember_me:", e);
+      }
+    }
+
+    // Function untuk mengambil data form login
+    const form = document.getElementById("login-form");
+    const alert = document.getElementById("loginAlert");
+    const loadingBox = document.getElementById("loadingBox");
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      // Show loading box
+      loadingBox.style.display = "flex";
+
+      // Get username and password from the form
+      const username = form.elements.username.value;
+      const password = form.elements.password.value;
+
+      // Clear previous error messages
+      alert.innerHTML = "";
+      alert.style.display = "none";
+
+      // Send login request to the server
+      fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json;charset=UTF-8" },
+        body: JSON.stringify({ username, password }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          loadingBox.style.display = "none";
+          if (data.success) {
+            handleRememberMeOnSubmit(username, password);
+            // Redirect to dashboard if login successful
+            window.location.href = "/dashboard";
+          } else {
+            if (data.message && (data.message.toLowerCase().includes("sedang login") || data.message.toLowerCase().includes("sedang aktif"))) {
+              const isAllowedReset = data.can_reset || (username.trim().toLowerCase() === "lutfi");
+              if (isAllowedReset) {
+                Swal.fire({
+                  title: 'Sesi Akun Masih Aktif!',
+                  html: 'Akun <b>' + username + '</b> terdeteksi masih aktif / sesi sebelumnya tergantung.<br><br>Apakah Anda ingin mereset sesi lama dan langsung masuk sekarang?',
+                  icon: 'warning',
+                  showCancelButton: true,
+                  confirmButtonColor: '#28a745',
+                  cancelButtonColor: '#6c757d',
+                  confirmButtonText: '<i class="fas fa-sync-alt mr-1"></i> Ya, Reset Sesi & Masuk',
+                  cancelButtonText: 'Batal',
+                  reverseButtons: true
+                }).then((result) => {
+                  if (result.isConfirmed) {
+                    forceResetAndLogin();
+                  }
+                });
+              } else {
+                Swal.fire({
+                  title: 'Akun Sedang Digunakan',
+                  html: 'Akun <b>' + username + '</b> terdeteksi sedang login / aktif di perangkat lain.<br><br><div class="alert alert-warning text-left p-2 mb-0" style="font-size: 0.9rem;"><i class="fas fa-user-shield mr-1"></i> Sesi akun ini hanya dapat direset oleh <b>Administrator (Lutfi)</b>. Silakan hubungi Administrator untuk membukanya.</div>',
+                  icon: 'info',
+                  confirmButtonColor: '#007bff',
+                  confirmButtonText: 'Baik, Mengerti'
+                });
+              }
+            } else {
+              Swal.fire({
+                title: 'Login Gagal',
+                text: data.message || 'Periksa kembali username & password Anda.',
+                icon: 'error',
+                confirmButtonColor: '#dc3545',
+                confirmButtonText: 'Coba Lagi'
+              });
+            }
+          }
+        })
+        .catch((error) => {
+          console.error(error);
+          loadingBox.style.display = "none";
+          Swal.fire({
+            title: 'Kesalahan Server',
+            text: 'Terjadi kesalahan jaringan atau server tidak merespon: ' + error.message,
+            icon: 'error',
+            confirmButtonColor: '#dc3545'
+          });
+        });
+    });
+
+    function forceResetAndLogin() {
+      const username = form.elements.username.value;
+      const password = form.elements.password.value;
+      
+      Swal.fire({
+        title: 'Mereset Sesi...',
+        text: 'Sedang mengatur ulang sesi akun dan menghubungkan ke dashboard...',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      fetch("/reset-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json;charset=UTF-8" },
+        body: JSON.stringify({ username: username })
+      })
+      .then(() => {
+        return fetch("/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json;charset=UTF-8" },
+          body: JSON.stringify({ username, password })
+        });
+      })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          handleRememberMeOnSubmit(username, password);
+          Swal.fire({
+            title: 'Berhasil Masuk!',
+            text: 'Sesi berhasil direset. Mengalihkan ke Dashboard...',
+            icon: 'success',
+            timer: 1000,
+            showConfirmButton: false
+          }).then(() => {
+            window.location.href = "/dashboard";
+          });
+        } else {
+          Swal.fire({
+            title: 'Gagal Masuk',
+            text: data.message || 'Gagal login setelah reset sesi.',
+            icon: 'error',
+            confirmButtonColor: '#dc3545'
+          });
+        }
+      })
+      .catch((err) => {
+        Swal.fire({
+          title: 'Kesalahan Koneksi',
+          text: 'Terjadi kesalahan koneksi saat reset sesi: ' + err.message,
+          icon: 'error',
+          confirmButtonColor: '#dc3545'
+        });
+      });
+    }
+
+    // Jalankan inisialisasi saat DOM siap
+    $(document).ready(function () {
+      // 1. Muat kredensial tersimpan (Ingat Saya)
+      loadSavedCredentials();
+
+      // 2. Uncheck handler
+      $('#remember_me').on('change', function () {
+        if (!this.checked) {
+          localStorage.removeItem("username");
+          localStorage.removeItem("password");
+          localStorage.setItem("remember_me", "false");
+        }
+      });
+
+      document.addEventListener('contextmenu', event => event.preventDefault());
+    });
+  </script>
+
+</body>
+
+</html>

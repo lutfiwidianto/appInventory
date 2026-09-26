@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Edit Pengguna</title>
+</head>
+<body>
+  <h1>Edit Pengguna</h1>
+  <form action="{{ url_for('users_bp.edit_user', user_id=user[0]) }}" method="post">
+    <input type="hidden" name="user_id" value="{{ user[0] }}"> <!--bagian ini bisa ngirim ke server dega mengaktifkan ini ==> #user_id = request.form["user_id"]-->
+    <label for="nama">Nama:</label>
+    <input type="text" id="nama" name="nama" value="{{ user[1].strip() }}">
+    <br><br>
+    <label for="username">Username:</label>
+    <!--fungsi .strip() untuk menghapus space di akhir string hasil dari inputan database-->
+    <input type="text" id="username" name="username" value="{{ user[2].strip() }}">
+    <br><br>
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password" placeholder="input password baru">
+    <br><br>
+    <label for="level_user">Level Pengguna:</label>
+    <select id="level_user" name="level_user">
+    <option value="1" {% if user[4] == "1" %}selected{% endif %}>Admin</option>
+    <option value="2" {% if user[4] == "2" %}selected{% endif %}>User</option>
+    </select>
+    <br><br>
+    <label for="email">Email:</label>
+    <input type="email" id="email" name="email" value="{{ user[5] }}">
+    <br><br>
+    <input type="submit" value="Simpan Perubahan">
+  </form>
+</body>
+</html>

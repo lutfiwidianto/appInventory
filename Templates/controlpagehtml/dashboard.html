@@ -1,0 +1,190 @@
+{% extends 'base/base.html' %}
+{% block title %}{{ titlePage }}{% endblock %}
+{% block head %}
+{{ super() }}
+<!-- CSS khusus halaman ini -->
+
+<!-- Load Bootstrap CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.5.6/css/buttons.dataTables.min.css">
+{% endblock %}
+{% block content %}
+<!--  ------------ ------------ ------------Isi content halaman ini------------ ------------ ------------ -->
+<div class="content-wrapper">
+  <!-- Content Header (Page header) -->
+  <section class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-left">
+            <!-- <li class="breadcrumb-item active">Dashboard</li> -->
+          </ol>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-right">
+            <li><a href="#"> Automatic Log out :&nbsp;</a></li>
+            <li><span id="timer">00:00:00</span></li>
+          </ol>
+        </div>
+      </div>
+    </div><!-- /.container-fluid -->
+  </section>
+
+  <!-- Main content -->
+  <section class="content">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Dashboard</h3>
+              
+             
+            </div>
+            <!-- /.card-header -->
+            <div class="card-body">
+              <div class="row">
+                <div class="col-lg-3 col-6">
+                
+                <div id="countpermintaanit" class="small-box bg-info">
+                <div class="inner">
+                <h3>0</h3>
+                <p>New Permintaan IT</p>
+                </div>
+                <div class="icon">
+                <i class="ion ion-bag"></i>
+                </div>
+                <a href="#" class="small-box-footer" onclick="goToPermintaanIT()">More info <i class="fas fa-arrow-circle-right"></i></a>
+                </div>
+                </div>
+                
+                <!--
+                <div class="col-lg-3 col-6">
+                  
+                <div id="countpermintaanvoid" class="small-box bg-success">
+                  <div class="inner">
+                      <h3>0<sup style="font-size: 20px"></sup></h3>
+                      <p>New Permintaan Void</p>
+                  </div>
+                  <div class="icon">
+                      <i class="ion ion-stats-bars"></i>
+                  </div>
+                <a href="#" class="small-box-footer" onclick="goToPermintaanvoid()">More info <i class="fas fa-arrow-circle-right"></i></a>
+                </div>
+                </div>
+              -->
+                
+                <div class="col-lg-3 col-6">
+                  <div id="countmasihdipinjam" class="small-box bg-warning">
+                    <div class="inner">
+                    <h3>0<sup style="font-size: 20px"></sup></h3>
+                    <p>New Peminjaman Barang</p>
+                    </div>
+                    <div class="icon">
+                    <i class="ion ion-stats-bars"></i>
+                    </div>
+                    <a href="#" class="small-box-footer" onclick="goToPeminjamanbarang()">More info <i class="fas fa-arrow-circle-right"></i></a>
+                  </div>
+                </div>
+                
+                <div class="col-lg-3 col-6">
+                  <div id="user-countlogin" class="small-box bg-danger">
+                    <div class="inner">
+                      <h3>{{ user_countlogin }}</h3>
+                      <p>User Online</p>
+                    </div>
+                    <div class="icon">
+                      <i class="ion ion-pie-graph"></i>
+                    </div>
+                    <a href="#" class="small-box-footer" data-toggle="modal" data-target="#user-list-modal">More info <i class="fas fa-arrow-circle-right"></i></a>
+                  </div>
+                </div>                               
+              </div>
+                              
+            </div>
+            <!-- /.card-body -->
+          </div>
+          <!-- /.card -->
+        </div>
+        <!-- /.col -->
+      </div>
+      <!-- /.row -->
+    </div>
+    <!-- /.container-fluid -->
+  </section>
+  <!-- /.content -->
+</div>
+<!-- /.content-wrapper -->  
+
+<!-- Modal Alert-->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="false" style="position: fixed; top: 0; right: 0; margin: 0; transform: translate(0, 0); pointer-events: none;">
+  <div class="modal-dialog modal-sm" role="document" style="margin-top: 10px; margin-right: 25px; pointer-events: auto;">
+    <div class="modal-content" style="background-color: white; border-radius: 0; pointer-events: auto;">
+      <div class="alert d-flex align-items-center" role="alert" style="border-radius: 0; margin: 0;">
+        <i class="fas fa-check-circle mr-2"></i> <span id="message">Dokumen berhasil dibuat.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Denied  -->
+<div class="modal fade" id="deniedModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deniedModalLabel">Reset User</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Pesan akan diinput disini-->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success" id="confirmBtn" data-dismiss="modal">Iya</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- Modal -->
+<div class="modal fade" id="user-list-modal" tabindex="-1" role="dialog" aria-labelledby="user-list-modal-label" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="user-list-modal-label">List User Online</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <table id="user-table" class="table table-striped table-bordered">
+          <thead>
+            <tr>
+              <th>Nama</th>
+              <th>Username</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+  {{ super() }}
+    <!-- Bootstrap 4 -->
+    <script src="{{ url_for('static', filename='plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+
+    <!-- Date-range-picker di tgl update-->
+    <script src="{{ url_for('static', filename='plugins/moment/moment.min.js') }}"></script>
+    <!-- Control Full Page Khusus Dashboard-->
+    <script src="{{ url_for('send_js', path='dashboard.js') }}"></script>
+
+{% endblock %}

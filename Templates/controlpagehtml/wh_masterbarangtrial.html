@@ -1,0 +1,445 @@
+{% extends 'base/base.html' %}
+{% block title %}{{ titlePage }}{% endblock %}
+{% block head %}
+{{ super() }}
+<!-- CSS khusus halaman ini -->
+
+<!-- DataTables -->
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') }}">
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/datatables-responsive/css/responsive.bootstrap4.min.css') }}">
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/datatables-buttons/css/buttons.bootstrap4.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='adminlte/adminlte.min.css') }}">
+<!-- Load Bootstrap CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.5.6/css/buttons.dataTables.min.css">
+<!-- Datetimepicker -->
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css') }}">
+<!-- Custome CSS Datatable-->
+<style>
+  #example1 td:nth-child(0),
+  #example1 td:nth-child(1),
+  #example1 td:nth-child(2),
+  #example1 td:nth-child(3),
+  #example1 td:nth-child(4),
+  #example1 td:nth-child(6),
+  #example1 td:nth-child(7) {
+    white-space: nowrap;
+  }
+
+  .modal-dialog.custom {
+    max-width: 700px;
+  }
+
+  .modal-body {
+    max-height: 670px;
+    overflow-y: auto;
+  }
+
+  .inv-kodeBarangTambah {
+    display: none;
+    color: red;
+  }
+
+  .form-control:focus {
+    outline: 1px solid rgb(4, 182, 126);
+    box-shadow: none;
+  }
+</style>
+
+{% endblock %}
+{% block content %}
+<!--  ------------ ------------ ------------Isi content halaman ini------------ ------------ ------------ -->
+
+<div class="content-wrapper">
+  <!-- Content Header (Page header) -->
+  <section class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-left">
+            <li class="breadcrumb-item"><a href="#">DEPARTEMEN WAREHOUSE</a></li>
+            <li class="breadcrumb-item active">Master Barang</li>
+          </ol>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-right">
+            <li><a href="#"> Automatic Log out :&nbsp;</a></li>
+            <li><span id="timer">00:00:00</span></li>
+          </ol>
+        </div>
+      </div>
+    </div><!-- /.container-fluid -->
+  </section>
+
+  <!-- Main content -->
+  <section class="content">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Data Master Barang</h2>
+              <button type="button" class="btn btn-primary float-right" data-toggle="modal" data-target="#formModal">
+                Tambah Data </button>
+
+              <button type="button" id="btnRefresh" class="btn btn-success float-right" style="margin-right: 20px;">
+                Refresh
+              </button>
+              <!-- <button type="button" onclick="showAlert()" class="btn btn-primary">Tampilkan Alert</button> -->
+
+              <button type="text" id="btnMasihDipinjam" class="btn float-right"
+                style="margin-right: 60px; cursor: default; background-color: #dd9295; display: none;">
+                Masih Dipinjam
+              </button>
+
+            </div>
+            <!-- /.card-header -->
+            <div class="card-body">
+
+              <table id="example1" class="table table-bordered" style="width: 100%;">
+                <thead>
+                  <tr>
+                    <th>NO</th>
+                    <th>ID</th>
+                    <th>KODE BARANG</th>
+                    <th>NAMA BARANG IND</th>
+                    <th>NAMA BARANG MAND</th>
+                    <th>SATUAN</th>
+                    <th>RACKING</th>
+                    <th>KATEGORI BARANG</th>
+                    <th>GL CLASS</th>
+                    <th style="width: 80px; justify-content: center; text-align: center;">AKSI</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Data rows will be inserted here by your code -->
+                </tbody>
+                
+              </table>
+            </div>
+            <!-- /.card-body -->
+          </div>
+          <!-- /.card -->
+        </div>
+        <!-- /.col -->
+      </div>
+      <!-- /.row -->
+    </div>
+    <!-- /.container-fluid -->
+  </section>
+  <!-- /.content -->
+</div>
+<!-- /.content-wrapper -->
+
+<!-- Modal Alert-->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="false"
+  style="position: fixed; top: 0; right: 0; margin: 0; transform: translate(0, 0); pointer-events: none;">
+  <div class="modal-dialog modal-sm" role="document"
+    style="margin-top: 10px; margin-right: 25px; pointer-events: auto;">
+    <div class="modal-content" style="background-color: white; border-radius: 0; pointer-events: auto;">
+      <div class="alert d-flex align-items-center" role="alert" style="border-radius: 0; margin: 0;">
+        <i class="fas fa-check-circle mr-2"></i> <span id="message">Dokumen berhasil dibuat.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Denied Edit and Delete -->
+<div class="modal fade" id="deniedModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deniedModalLabel">Hapus Data</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Pesan akan diinput disini-->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Ok</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Modal Tambah-->
+<div class="modal fade" id="formModal" tabindex="-1" role="dialog" aria-labelledby="tambahModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered custom" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="tambahModalLabel">Form Input Data Master Barang</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="form-tambah-data" class="needs-validation" novalidate>
+          <div class="form-group">
+            <label for="kodeBarang">Kode Barang</label>
+            <input type="text" class="form-control" id="kodeBarang" name="kodeBarang" placeholder="Masukkan Kode Barang"
+              autocomplete="off">
+            <div class="invalid-feedback inv-kodeBarangTambah1">
+              Kode Barang harus diisi.
+            </div>
+            <div class="invalid-feedback inv-kodeBarangTambah2">
+              Kode Barang sudah digunakan.
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="namaBarangIndo">Nama Barang (Indonesia)</label>
+            <input type="text" class="form-control" id="namaBarangIndo" name="namaBarangIndo"
+              placeholder="Masukkan Nama Barang (Indonesia)" autocomplete="off">
+            <div class="invalid-feedback inv-namaBarangIndoTambah1">
+              Nama Barang Indo harus diisi.
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="namaBarangMand">Nama Barang (Mandarin)</label>
+            <input type="text" class="form-control" id="namaBarangMand" name="namaBarangMand"
+              placeholder="Masukkan Nama Barang (Mandarin)" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="satuanIndo">Satuan (Indonesia)</label>
+            <input type="text" class="form-control" id="satuanIndo" name="satuanIndo"
+              placeholder="Masukkan Satuan (Indonesia)" autocomplete="off">
+            <div class="invalid-feedback inv-satuanIndoTambah1">
+              Satuan Indo harus diisi.
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="satuanMand">Satuan (Mandarin)</label>
+            <input type="text" class="form-control" id="satuanMand" name="satuanMand"
+              placeholder="Masukkan Satuan (Mandarin)" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="racking">Racking</label>
+            <input type="text" class="form-control" id="racking" name="racking" placeholder="Masukkan Racking"
+              autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="kategoriBarang">Kategori Barang</label>
+            <select id="kategoriBarang" name="kategoriBarang" class="form-control" style="width: 100%;" id="select2">
+              <option selected disabled value=""></option>
+              <option>FASILITAS</option>
+              <option>NON FASILITAS</option>
+            </select>
+            <div class="invalid-feedback inv-kategoriBarangTambah1">
+              Kategori Barang harus dipilih salah satu.
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="jenisBarang">Jenis Barang</label>
+            <select id="jenisBarang" name="jenisBarang" class="form-control" style="width: 100%;" id="select2">
+              <option>LOKAL</option>
+              <option>IMPOR</option>
+            </select>
+            <div class="invalid-feedback inv-kategoriBarangTambah1">
+              Kategori Barang harus dipilih salah satu.
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="klasifikasi">Klasifikasi Barang</label>
+            <select id="klasifikasi" name="klasifikasi" class="form-control" style="width: 100%;" id="select2">
+              <option value=""></option>
+              <option value="BAHAN BAKAR PRODUKSI">BAHAN BAKAR PRODUKSI</option>
+              <option value="BAHAN PENELITIAN">BAHAN PENELITIAN</option>
+              <option value="BAHAN PENOLONG">BAHAN PENOLONG</option>
+              <option value="BAHAN SISA PENGEMAS">BAHAN SISA PENGEMAS</option>
+              <option value="BARANG SAMPLE (CONTOH)">BARANG SAMPLE (CONTOH)</option>
+              <option value="FINISHED GOODS MATERIAL">FINISHED GOODS MATERIAL</option>
+              <option value="JASA SUBKON">JASA SUBKON</option>
+              <option value="KONSTRUKSI">KONSTRUKSI</option>
+              <option value="MESIN & SPARE PART">MESIN & SPARE PART</option>
+              <option value="PEMUSNAHAN">PEMUSNAHAN</option>
+              <option value="PENGEMAS">PENGEMAS</option>
+              <option value="PERALATAN KANTOR">PERALATAN KANTOR</option>
+              <option value="PERALATAN PABRIK">PERALATAN PABRIK</option>
+              <option value="RAW MATERIAL (BAHAN BAKU)">RAW MATERIAL (BAHAN BAKU)</option>
+              <option value="SCRAP">SCRAP</option>
+              <option value="SISA HASIL PRODUKSI">SISA HASIL PRODUKSI</option>
+              <option value="SUPPLIES">SUPPLIES</option>
+              <option value="WIP">WIP</option>
+            </select>
+            <div class="invalid-feedback inv-kategoriBarangTambah1">
+              Klasifikasi Barang harus dipilih salah satu.
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-primary">
+              <i class="fab fa-telegram"></i> Tambah
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- Modal edit -->
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered custom" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title" id="editModalLabel">Edit Data</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="form-Edit-data" class="needs-validation" novalidate>
+          <div class="form-group">
+            <input type="hidden" id="originalData" name="originalData" value="">
+            <input type="hidden" class="form-control idEdit" id="idEdit">
+            <label for="kodeBarang">Kode Barang</label>
+            <input type="text" class="form-control" id="kodebarangEdit" name="kodebarangEdit"
+              placeholder="Masukkan Kode Barang" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="namaBarangIndo">Nama Barang (Indonesia)</label>
+            <input type="text" class="form-control" id="namabarangindoEdit" name="namabarangindoEdit"
+              placeholder="Masukkan Nama Barang (Indonesia)" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="namaBarangMand">Nama Barang (Mandarin)</label>
+            <input type="text" class="form-control" id="namabarangmandEdit" name="namabarangmandEdit"
+              placeholder="Masukkan Nama Barang (Mandarin)" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="satuanIndo">Satuan (Indonesia)</label>
+            <input type="text" class="form-control" id="satuanindoEdit" name="satuanindoEdit"
+              placeholder="Masukkan Satuan (Indonesia)" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="satuanMand">Satuan (Mandarin)</label>
+            <input type="text" class="form-control" id="satuanmandEdit" name="satuanmandEdit"
+              placeholder="Masukkan Satuan (Mandarin)" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="racking">Racking</label>
+            <input type="text" class="form-control" id="rackingEdit" name="rackingEdit" placeholder="Masukkan Racking"
+              autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label for="kategoriBarang">Kategori Barang</label>
+            <select id="kategoribarangEdit" name="kategoribarangEdit" class="form-control select2bs4"
+              style="width: 100%;" id="select2">
+              <option selected disabled value=""></option>
+              <option>FASILITAS</option>
+              <option>NON FASILITAS</option>
+              <option>GABUNGAN</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="jenisBarangEdit">Jenis Barang</label>
+            <select id="jenisBarangEdit" name="jenisBarangEdit" class="form-control" style="width: 100%;" id="select2">
+              <option>LOKAL</option>
+              <option>IMPOR</option>
+            </select>
+            <div class="invalid-feedback inv-kategoriBarangTambah1">
+              Kategori Barang harus dipilih salah satu.
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="klasifikasiEdit">Klasifikasi Barang</label>
+            <select id="klasifikasiEdit" name="klasifikasiEdit" class="form-control" style="width: 100%;" id="select2">
+              <option value=""></option>
+              <option value="BAHAN BAKAR PRODUKSI">BAHAN BAKAR PRODUKSI</option>
+              <option value="BAHAN PENELITIAN">BAHAN PENELITIAN</option>
+              <option value="BAHAN PENOLONG">BAHAN PENOLONG</option>
+              <option value="BAHAN SISA PENGEMAS">BAHAN SISA PENGEMAS</option>
+              <option value="BARANG SAMPLE (CONTOH)">BARANG SAMPLE (CONTOH)</option>
+              <option value="FINISHED GOODS MATERIAL">FINISHED GOODS MATERIAL</option>
+              <option value="JASA SUBKON">JASA SUBKON</option>
+              <option value="KONSTRUKSI">KONSTRUKSI</option>
+              <option value="MESIN & SPARE PART">MESIN & SPARE PART</option>
+              <option value="PEMUSNAHAN">PEMUSNAHAN</option>
+              <option value="PENGEMAS">PENGEMAS</option>
+              <option value="PERALATAN KANTOR">PERALATAN KANTOR</option>
+              <option value="PERALATAN PABRIK">PERALATAN PABRIK</option>
+              <option value="RAW MATERIAL (BAHAN BAKU)">RAW MATERIAL (BAHAN BAKU)</option>
+              <option value="SCRAP">SCRAP</option>
+              <option value="SISA HASIL PRODUKSI">SISA HASIL PRODUKSI</option>
+              <option value="SUPPLIES">SUPPLIES</option>
+              <option value="WIP">WIP</option>
+            </select>
+            <div class="invalid-feedback inv-kategoriBarangTambah1">
+              Klasifikasi Barang harus dipilih salah satu.
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="submit" class="btn btn-warning">
+              <i class="fab fa-telegram"></i> Simpan Perubahan
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Modal Delete -->
+  <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="deleteModalLabel">Hapus Data</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <!-- Pesan akan diinput disini-->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+          <button type="button" class="btn btn-danger btn-confirm-delete">Hapus</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  {% endblock %}
+  {% block scripts %}
+  {{ super() }}
+  <!-- All JavaScript khusus halaman ini -->
+  <!-- Bootstrap 4 -->
+  <script src="{{ url_for('static', filename='plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+  <!-- DataTables  & Plugins -->
+  <script src="{{ url_for('static', filename='plugins/datatables/jquery.dataTables.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/datatables-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
+  <script
+    src="{{ url_for('static', filename='plugins/datatables-responsive/js/dataTables.responsive.min.js') }}"></script>
+  <script
+    src="{{ url_for('static', filename='plugins/datatables-responsive/js/responsive.bootstrap4.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/dataTables.buttons.min.js') }}"></script>
+  <script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.flash.min.js"></script>
+  <script src="https://cdn.datatables.net/buttons/1.5.6/js/dataTables.buttons.min.js"></script>
+  <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.bootstrap4.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/jszip/jszip.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/pdfmake/pdfmake.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/pdfmake/vfs_fonts.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.html5.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.print.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.colVis.min.js') }}"></script>
+  <!-- Date-range-picker -->
+  <script src="{{ url_for('static', filename='plugins/moment/moment.min.js') }}"></script>
+  <script
+    src="{{ url_for('static', filename='plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js') }}"></script>
+  <!-- Control Full Page Khusus Permintaan IT-->
+  <script src="{{ url_for('send_js', path='wh_masterbarangtrial.js') }}"></script>
+
+  {% endblock %}

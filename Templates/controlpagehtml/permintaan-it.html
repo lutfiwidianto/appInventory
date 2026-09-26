@@ -1,0 +1,744 @@
+{% extends 'base/base.html' %}
+{% block title %}{{ titlePage }}{% endblock %}
+{% block head %}
+{{ super() }}
+<!-- CSS khusus halaman ini -->
+
+<!-- DataTables -->
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/datatables-responsive/css/responsive.bootstrap4.min.css') }}"> 
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/datatables-buttons/css/buttons.bootstrap4.min.css') }}"> 
+<link rel="stylesheet" href="{{ url_for('static', filename='adminlte/adminlte.min.css') }}">
+<!-- Load Bootstrap CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.5.6/css/buttons.dataTables.min.css">
+<!-- Datetimepicker -->
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css') }}">
+<!-- Custome CSS Datatable-->
+<style>
+  #example1 td:nth-child(2), #example1 td:nth-child(3), 
+  #example1 td:nth-child(4), #example1 td:nth-child(5),
+  #example1 td:nth-child(9), #example1 td:nth-child(10),
+  #example1 td:nth-child(21), #example1 td:nth-child(22)
+  {
+  white-space: nowrap;
+}
+
+.modal-dialog.custom {
+  max-width: 1000px;
+}
+
+.modal-body {
+  max-height: 670px;
+  overflow-y: auto;
+}
+
+
+</style>
+
+{% endblock %}
+{% block content %}
+<!--  ------------ ------------ ------------Isi content halaman ini------------ ------------ ------------ -->
+
+  <div class="content-wrapper">
+  <!-- Content Header (Page header) -->
+  <section class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-left">
+            <li class="breadcrumb-item"><a href="#">DEPARTEMEN IT</a></li>
+            <li class="breadcrumb-item active">Permintaan IT</li>
+          </ol>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-right">
+            <li><a href="#"> Automatic Log out :&nbsp;</a></li>
+            <li><span id="timer">00:00:00</span></li>
+          </ol>
+        </div>
+      </div>
+    </div><!-- /.container-fluid -->
+  </section>
+
+  <!-- Main content -->
+  <section class="content">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Data permintaan IT</h2>
+              <button type="button" class="btn btn-primary float-right" data-toggle="modal" data-target="#formModal">
+                Tambah Data </button>
+              <button type="button" id="btnRefresh" class="btn btn-success float-right" style="margin-right: 20px;">
+                Refresh
+              </button>
+              <!-- <button type="button" onclick="showAlert()" class="btn btn-primary">Tampilkan Alert</button> -->
+
+              <button type="text" id="btnPending" class="btn float-right" style="margin-right: 350px; cursor: default; background-color: #dd9295; display: none;">
+                PENDING
+              </button>
+              <button type="text" id="btnDikerjakan" class="btn float-right" style="margin-right: 60px; cursor: default; background-color: #e7e55f; display: none;">
+                Dikerjakan
+              </button>
+              
+            </div>
+            <!-- /.card-header -->
+            <div class="card-body">
+              <table id="example1" class="table table-bordered" style="width: 1000px;">
+                <thead>
+                  <tr>
+                    <th>NO</th>
+                    <th>ID</th>
+                    <th>TANGGAL</th>
+                    <th>DEPT</th>
+                    <th>NOMOR ASET</th>
+                    <th>NAMA SARANA</th>
+                    <th>KERUSAKAN / REQUEST</th>
+                    <th>KATEGORI</th>
+                    <th>JENIS TINDAKAN</th>
+                    <th>TANGGAL PERBAIKAN</th>
+                    <th>TANGGAL SELESAI</th>
+                    <th>LEVEL KERUSAKAN</th>
+                    <th>PENYEBAB</th>
+                    <th>TINDAKAN</th>
+                    <th>SARAN</th>
+                    <th>PEMOHON</th>
+                    <th>PETUGAS PERBAIKAN</th>
+                    <th>HASIL PERBAIKAN</th>
+                    <th>VERIFIKASI USER</th>
+                    <th>LOGIN NAMA</th>
+                    <th>LOGIN ID</th>
+                    <th>STATUS</th>
+                    <th style="width: 80px; justify-content: center; text-align: center;">AKSI</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Data rows will be inserted here by your code -->
+                </tbody>
+                <!--tfoot>
+                  <tr>
+                    <th>NO</th>
+                    <th>ID</th>
+                    <th>TANGGAL</th>
+                    <th>DEPT</th>
+                    <th>NOMOR ASET</th>
+                    <th>NAMA SARANA</th>
+                    <th>KERUSAKAN / REQUEST</th>
+                    <th>KATEGORI</th>
+                    <th>JENIS TINDAKAN</th>
+                    <th>TANGGAL PERBAIKAN</th>
+                    <th>TANGGAL SELESAI</th>
+                    <th>LEVEL KERUSAKAN</th>
+                    <th>PENYEBAB</th>
+                    <th>TINDAKAN</th>
+                    <th>SARAN</th>
+                    <th>PEMOHON</th>
+                    <th>PETUGAS PERBAIKAN</th>
+                    <th>HASIL PERBAIKAN</th>
+                    <th>VERIFIKASI USER</th>
+                    <th>LOGIN NAMA</th>
+                    <th>LOGIN ID</th>
+                    <th>STATUS</th>
+                    <th style="width: 80px; justify-content: center; text-align: center;">AKSI</th>
+                  </tr>
+                </tfoot-->
+              </table>
+            </div>
+            <!-- /.card-body -->
+          </div>
+          <!-- /.card -->
+        </div>
+        <!-- /.col -->
+      </div>
+      <!-- /.row -->
+    </div>
+    <!-- /.container-fluid -->
+  </section>
+  <!-- /.content -->
+</div>
+<!-- /.content-wrapper -->
+
+<!-- Modal Denied Edit and Delete -->
+<div class="modal fade" id="deniedModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deniedModalLabel">Hapus Data</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Pesan akan diinput disini-->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Ok</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Modal Tambah-->
+<div class="modal fade" id="formModal" tabindex="-1" role="dialog" aria-labelledby="tambahModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered custom" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="tambahModalLabel">Tambah Data</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      
+      <form id="form-tambah-data" class="needs-validation" novalidate>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <label>Tanggal Pengajuan:</label>
+                <div class="input-group date" id="tanggalpengajuanTambahDiv" data-target-input="nearest">
+                    <input type="text" class="form-control datetimepicker-input" id="tanggalpengajuanTambah" name="tanggalpengajuanTambah" data-target="#tanggalpengajuanTambahDiv"/>
+                    <div class="input-group-append" data-target="#tanggalpengajuanTambahDiv" data-toggle="datetimepicker">
+                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                    </div>
+                </div>
+            </div>           
+            
+            
+              <div class="form-group">
+                <label for="deptTambah">Dept:</label>
+                <input type="text" class="form-control deptTambah" id="deptTambah"  name="deptTambah" placeholder="Masukkan dept anda" required autocomplete="off">
+                <div class="invalid-feedback inv-deptTambah-0">
+                  Dept harus diisi.
+                </div>
+                <div class="invalid-feedback inv-deptTambah-1">
+                  Maksimal 5 Karakter.
+                </div>
+                <div class="valid-feedback deptTambah">
+                  Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="nomorassetTambah">Nomor Asset / Kode Barang :</label>
+                <input type="text" class="form-control nomorassetTambah" id="nomorassetTambah" placeholder="Masukkan nomor asset" required autocomplete="off">
+                <div class="invalid-feedback inv-nomorassetTambah-0">
+                  Tidak boleh kosong.
+                </div>
+                <div class="valid-feedback nomorassetTambah">
+                  Valid!
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="namasaranaTambah">Nama Sarana / Uraian Barang :</label>
+                <input type="text" class="form-control namasaranaTambah" id="namasaranaTambah" placeholder="Masukkan nama sarana" required autocomplete="off">
+                <div class="invalid-feedback inv-namasaranaTambah-0">
+                  Nama Sarana tidak boleh kosong.
+                </div>
+                <div class="valid-feedback namasaranaTambah">
+                  Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="kerusakanTambah">KERUSAKAN / REQUEST:</label>
+                <input type="text" class="form-control kerusakanTambah" id="kerusakanTambah" nama="kerusakanTambah" placeholder="Masukkan keluhan / keinginan / permintaan anda" required autocomplete="off">
+                <div class="invalid-feedback inv-kerusakanTambah-0">
+                  Bagian ini harus diisi.
+                </div>
+                <div class="valid-feedback kerusakanTambah">
+                  Valid!
+                </div>
+              </div>  
+
+              <div class="form-group">
+                <label for="kategoriTambah">Kategori :</label>
+                <select id="kategoriTambah" class="form-control kategoriTambah" required>
+                  <option selected disabled value=""></option>
+                  <option>Software</option>
+                  <option>Hardware</option>
+                  <option>APP Inventory</option>
+                  <option>Lain-lain</option>
+                </select>
+                <div class="invalid-feedback inv-kategoriTambah-0">
+                  Kategori harus diisi.
+                </div>
+                <div class="valid-feedback kategoriTambah">
+                  Valid!
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label>Tanggal Perbaikan :</label>
+                <div class="input-group date"  data-target-input="nearest">
+                  <input type="text" class="form-control datetimepicker-input" id="tanggalperbaikanTambah" name="tanggalperbaikanTambah" data-target="#tanggalperbaikanTambah"/>
+                  <div class="input-group-append" data-target="#tanggalperbaikanTambah" data-toggle="datetimepicker">
+                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Tanggal Selesai :</label>
+                <div class="input-group date"  data-target-input="nearest">
+                  <input type="text" class="form-control datetimepicker-input" id="tanggalselesaiTambah" name="tanggalselesaiTambah" data-target="#tanggalselesaiTambah"/>
+                  <div class="input-group-append" data-target="#tanggalselesaiTambah" data-toggle="datetimepicker">
+                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                  </div>
+                </div>
+              </div>  
+              <div class="form-group">
+                <label for="inputState jenistindakanTambah">Jenis Tindakan :</label>
+                <select id="jenistindakanTambah" class="form-control jenistindakanTambah" required>
+                  <option selected disabled value=""></option>
+                  <option>Perbaikan</option>
+                  <option>Instalasi</option>
+                  <option>Pergantian Spearpart</option>
+                </select>
+                <div class="invalid-feedback inv-jenistindakanTambah-0">
+                  Jenis Tindakan harus diisi.
+                </div>
+                <div class="valid-feedback jenistindakanTambah">
+                  Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="inputState levelkerusakanTambah">Level Kerusakan :</label>
+                <select id="levelkerusakanTambah" class="form-control levelkerusakanTambah" required>
+                  <option selected disabled value=""></option>
+                  <option>Sedang</option>
+                  <option>Ringan</option>
+                  <option>Berat</option>
+                </select>
+                <div class="invalid-feedback inv-levelkerusakanTambah-0">
+                  Level Kerusakan harus diisi.
+                </div>
+                <div class="valid-feedback levelkerusakanTambah">
+                  Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="inputState statusTambah">Status :</label>
+                <select id="statusTambah" class="form-control statusTambah" required>
+                  <option selected value="Pending">Pending</option>
+                  <option>Dikerjakan</option>
+                  <option>Selesai</option>
+                </select>
+                <div class="invalid-feedback inv-statusTambah-0">
+                  Status harus diisi.
+                </div>
+                <div class="valid-feedback statusTambah">
+                  Valid!
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-12">
+              <div class="form-group">
+                <label for="penyebabTambah">Penyebab :</label>
+                <textarea class="form-control penyebabTambah" id="penyebabTambah" placeholder="Masukkan penyebab permintaan / kerusakan / lain-lain" required></textarea>
+                <div class="invalid-feedback inv-penyebabTambah-0">
+                  Penyebab harus diisi.
+                </div>
+                <div class="valid-feedback penyebabTambah">
+                  Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="tindakanTambah">Tindakan :</label>
+                <textarea class="form-control tindakanTambah" id="tindakanTambah" placeholder="Masukkan tindakan IT" required></textarea>
+                <div class="invalid-feedback inv-tindakanTambah-0">
+                  Tindakan harus diisi.
+                </div>
+                <div class="valid-feedback tindakanTambah">
+                  Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="saranTambah">Saran :</label>
+                <textarea class="form-control saranTambah" id="saranTambah" placeholder="Masukkan saran dari IT" required></textarea>
+                <div class="invalid-feedback inv-saranTambah-0">
+                  Alasan IT harus diisi.
+                </div>
+                <div class="valid-feedback saranTambah">
+                  Valid!
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="pemohonTambah">Pemohon :</label>
+                <input type="text" class="form-control" id="pemohonTambah" name="pemohonTambah" placeholder="Nama pemohon" required autocomplete="off">
+                <div class="invalid-feedback inv-pemohonTambah-0">
+                  Nama pemohon harus diisi.
+                </div>
+                <div class="valid-feedback pemohonTambah">
+                  Valid!
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="petugasperbaikanTambah">Petugas Perbaikan :</label>
+                <input type="text" class="form-control" id="petugasperbaikanTambah" name="petugasperbaikanTambah" placeholder="Nama petugas perbaikan" required autocomplete="off">
+                <div class="invalid-feedback inv-petugasperbaikanTambah-0">
+                  Nama petugas perbaikan harus diisi.
+                </div>
+                <div class="valid-feedback petugasperbaikanTambah">
+                  Valid!
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="hasilperbaikanTambah">Hasil Perbaikan :</label>
+                <select id="hasilperbaikanTambah" class="form-control hasilperbaikanTambah" required>
+                  <option selected disabled value=""></option>
+                  <option>OK</option>
+                  <option>TIDAK OK</option>
+                </select>
+                <div class="invalid-feedback inv-hasilperbaikanTambah-0">
+                  Hasil perbaikan harus diisi.
+                </div>
+                <div class="valid-feedback hasilperbaikanTambah">
+                  Valid!
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="verifikasiuserTambah">Verifisi User :</label>
+                <input type="text" class="form-control" id="verifikasiuserTambah" name="verifikasiuserTambah" placeholder="Nama verifikator" required autocomplete="off">
+                <div class="invalid-feedback inv-verifikasiuserTambah-0">
+                  Nama verifikator harus diisi.
+                </div>
+                <div class="valid-feedback verifikasiuserTambah">
+                  Valid!
+                </div>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Edit-->
+<div class="modal fade" id="formModalEdit" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered custom" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="EditModalLabel">Edit Data</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      
+      <form id="form-Edit-data" class="needs-validation" novalidate>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group">
+                <input type="hidden" id="originalData" name="originalData" value="">
+                <input type="hidden" class="form-control idEdit" id="idEdit">
+                <label>Tanggal Pengajuan:</label>
+                <div class="input-group date" id="tanggalpengajuanEditDiv" data-target-input="nearest">
+                    <input type="text" class="form-control datetimepicker-input" id="tanggalpengajuanEdit" name="tanggalpengajuanEdit" data-target="#tanggalpengajuanEditDiv"/>
+                    <div class="input-group-append" data-target="#tanggalpengajuanEditDiv" data-toggle="datetimepicker">
+                        <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                    </div>
+                </div>
+            </div>           
+            
+            
+              <div class="form-group">
+                <label for="deptEdit">Dept:</label>
+                <input type="text" class="form-control deptEdit" id="deptEdit"  name="deptEdit" placeholder="Masukkan dept anda" required autocomplete="off">
+                <div class="invalid-feedback inv-deptEdit-0">
+                  Dept harus diisi.
+                </div>
+                <div class="invalid-feedback inv-deptEdit-1">
+                  Maksimal 5 Karakter.
+                </div>
+                <div class="valid-feedback deptEdit">
+                  Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="nomorassetEdit">Nomor Asset :</label>
+                <input type="text" class="form-control nomorassetEdit" id="nomorassetEdit" placeholder="Masukkan nomor asset" required autocomplete="off">
+                <div class="invalid-feedback inv-nomorassetEdit-0">
+                  Nomor Asset tidak boleh kosong.
+                </div>
+                <div class="valid-feedback nomorassetEdit">
+                  Valid!
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="namasaranaEdit">Nama Sarana :</label>
+                <input type="text" class="form-control namasaranaEdit" id="namasaranaEdit" placeholder="Masukkan nama sarana" required autocomplete="off">
+                <div class="invalid-feedback inv-namasaranaEdit-0">
+                  Nama Sarana tidak boleh kosong.
+                </div>
+                <div class="valid-feedback namasaranaEdit">
+                  Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="kerusakanEdit">KERUSAKAN / REQUEST:</label>
+                <input type="text" class="form-control kerusakanEdit" id="kerusakanEdit" nama="kerusakanEdit" placeholder="Masukkan keluhan / keinginan / permintaan anda" required autocomplete="off">
+                <div class="invalid-feedback inv-kerusakanEdit-0">
+                  Bagian ini harus diisi.
+                </div>
+                <div class="valid-feedback kerusakanEdit">
+                  Valid!
+                </div>
+              </div>  
+
+              <div class="form-group">
+                <label for="kategoriEdit">Kategori :</label>
+                <select id="kategoriEdit" class="form-control kategoriEdit" required>
+                  <option selected disabled value=""></option>
+                  <option>Software</option>
+                  <option>Hardware</option>
+                  <option>Lain-lain</option>
+                </select>
+                <div class="invalid-feedback inv-kategoriEdit-0">
+                  Kategori harus diisi.
+                </div>
+                <div class="valid-feedback kategoriEdit">
+                  Valid!
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group">
+                <label>Tanggal Perbaikan :</label>
+                <div class="input-group date" data-target-input="nearest">
+                  <input type="text" class="form-control datetimepicker-input" id="tanggalperbaikanEdit" name="tanggalperbaikanEdit" data-target="#tanggalperbaikanEdit"/>
+                  <div class="input-group-append" data-target="#tanggalperbaikanEdit" data-toggle="datetimepicker">
+                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Tanggal Selesai :</label>
+                <div class="input-group date" data-target-input="nearest">
+                  <input type="text" class="form-control datetimepicker-input" id="tanggalselesaiEdit" name="tanggalselesaiEdit" data-target="#tanggalselesaiEdit"/>
+                  <div class="input-group-append" data-target="#tanggalselesaiEdit" data-toggle="datetimepicker">
+                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                  </div>
+                </div>
+              </div>  
+              <div class="form-group">
+                <label for="inputState jenistindakanEdit">Jenis Tindakan :</label>
+                <select id="jenistindakanEdit" class="form-control jenistindakanEdit" required>
+                  <option selected disabled value=""></option>
+                  <option>Perbaikan</option>
+                  <option>Instalasi</option>
+                  <option>Pergantian Spearpart</option>
+                </select>
+                <div class="invalid-feedback inv-jenistindakanEdit-0">
+                  Jenis Tindakan harus diisi.
+                </div>
+                <div class="valid-feedback jenistindakanEdit">
+                  Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="inputState levelkerusakanEdit">Level Kerusakan :</label>
+                <select id="levelkerusakanEdit" class="form-control levelkerusakanEdit" required>
+                  <option selected disabled value=""></option>
+                  <option>Sedang</option>
+                  <option>Ringan</option>
+                  <option>Berat</option>
+                </select>
+                <div class="invalid-feedback inv-levelkerusakanEdit-0">
+                  Level Kerusakan harus diisi.
+                </div>
+                <div class="valid-feedback levelkerusakanEdit">
+                  Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="inputState statusEdit">Status :</label>
+                <select id="statusEdit" class="form-control statusEdit" required>
+                  <option selected value="Pending">Pending</option>
+                  <option>Dikerjakan</option>
+                  <option>Selesai</option>
+                </select>
+                <div class="invalid-feedback inv-statusEdit-0">
+                  Status harus diisi.
+                </div>
+                <div class="valid-feedback statusEdit">
+                  Valid!
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-12">
+              <div class="form-group">
+                <label for="penyebabEdit">Penyebab :</label>
+                <textarea class="form-control penyebabEdit" id="penyebabEdit" placeholder="Masukkan penyebab permintaan / kerusakan / lain-lain" required></textarea>
+                <div class="invalid-feedback inv-penyebabEdit-0">
+                  Penyebab harus diisi.
+                </div>
+                <div class="valid-feedback penyebabEdit">
+                  Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="tindakanEdit">Tindakan :</label>
+                <textarea class="form-control tindakanEdit" id="tindakanEdit" placeholder="Masukkan tindakan IT" required></textarea>
+                <div class="invalid-feedback inv-tindakanEdit-0">
+                  Tindakan harus diisi.
+                </div>
+                <div class="valid-feedback tindakanEdit">
+                  Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="saranEdit">Saran :</label>
+                <textarea class="form-control saranEdit" id="saranEdit" placeholder="Masukkan saran dari IT" required></textarea>
+                <div class="invalid-feedback inv-saranEdit-0">
+                  Alasan IT harus diisi.
+                </div>
+                <div class="valid-feedback saranEdit">
+                  Valid!
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="pemohonEdit">Pemohon :</label>
+                <input type="text" class="form-control" id="pemohonEdit" name="pemohonEdit" placeholder="Nama pemohon" required autocomplete="off">
+                <div class="invalid-feedback inv-pemohonEdit-0">
+                  Nama pemohon harus diisi.
+                </div>
+                <div class="valid-feedback pemohonEdit">
+                  Valid!
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="petugasperbaikanEdit">Petugas Perbaikan :</label>
+                <input type="text" class="form-control" id="petugasperbaikanEdit" name="petugasperbaikanEdit" placeholder="Nama petugas perbaikan" required autocomplete="off">
+                <div class="invalid-feedback inv-petugasperbaikanEdit-0">
+                  Nama petugas perbaikan harus diisi.
+                </div>
+                <div class="valid-feedback petugasperbaikanEdit">
+                  Valid!
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="hasilperbaikanEdit">Hasil Perbaikan :</label>
+                <select id="hasilperbaikanEdit" class="form-control hasilperbaikanEdit" required>
+                  <option selected disabled value=""></option>
+                  <option>OK</option>
+                  <option>TIDAK OK</option>
+                </select>
+                <div class="invalid-feedback inv-hasilperbaikanEdit-0">
+                  Hasil perbaikan harus diisi.
+                </div>
+                <div class="valid-feedback hasilperbaikanEdit">
+                  Valid!
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="verifikasiuserEdit">Verifisi User :</label>
+                <input type="text" class="form-control" id="verifikasiuserEdit" name="verifikasiuserEdit" placeholder="Nama verifikator" required autocomplete="off">
+                <div class="invalid-feedback inv-verifikasiuserEdit-0">
+                  Nama verifikator harus diisi.
+                </div>
+                <div class="valid-feedback verifikasiuserEdit">
+                  Valid!
+                </div>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Delete -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteModalLabel">Hapus Data</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Pesan akan diinput disini-->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-danger btn-confirm-delete">Hapus</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Alert-->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="false" style="position: fixed; top: 0; right: 0; margin: 0; transform: translate(0, 0); pointer-events: none;">
+  <div class="modal-dialog modal-sm" role="document" style="margin-top: 10px; margin-right: 25px; pointer-events: auto;">
+    <div class="modal-content" style="background-color: white; border-radius: 0; pointer-events: auto;">
+      <div class="alert d-flex align-items-center" role="alert" style="border-radius: 0; margin: 0;">
+        <i class="fas fa-check-circle mr-2"></i> <span id="message">Dokumen berhasil dibuat.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+  {{ super() }}
+    <!-- All JavaScript khusus halaman ini --> 
+    <!-- Bootstrap 4 -->
+    <script src="{{ url_for('static', filename='plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <!-- DataTables  & Plugins -->
+    <script src="{{ url_for('static', filename='plugins/datatables/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-responsive/js/dataTables.responsive.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-responsive/js/responsive.bootstrap4.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/dataTables.buttons.min.js') }}"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.flash.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.6/js/dataTables.buttons.min.js"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.bootstrap4.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/jszip/jszip.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/pdfmake/pdfmake.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/pdfmake/vfs_fonts.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.html5.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.print.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.colVis.min.js') }}"></script>
+    <!-- Date-range-picker -->
+    <script src="{{ url_for('static', filename='plugins/moment/moment.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js') }}"></script>
+    <!-- Control Full Page Khusus Permintaan IT-->
+    <script src="{{ url_for('send_js', path='permintaan-it.js') }}"></script>
+
+{% endblock %}

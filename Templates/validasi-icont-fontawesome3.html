@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Form Email</title>
+	<!-- Load Bootstrap CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+	<!-- Load Fontawesome CSS -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+	<style>
+		.form-control-feedback {
+			position: absolute;
+			right: 0;
+			top: 50%;
+			transform: translateY(-50%);
+			padding: 7px;
+			pointer-events: none;
+		}
+	</style>
+</head>
+<body>
+
+	<div class="container">
+		<h1>Form Email</h1>
+		<form id="email-form" method="POST">
+			<div class="form-group">
+				<div class="position-relative">
+					<input type="email" class="form-control email" id="email" name="email" placeholder="Masukkan email Anda" required>
+					<i id="email-icon" class="fas fa-check-circle form-control-feedback text-success email" style="display: none;"></i>
+					<i id="email-icon" class="fas fa-times-circle form-control-feedback text-danger email" style="display: none;"></i>
+				</div>
+				<div class="invalid-feedback email">
+					Mohon isi email yang valid.
+				</div>
+				<div class="valid-feedback email">
+					Terima kasih!
+				</div>
+			</div>
+			<div class="form-group">
+				<div class="position-relative">
+					<input type="text" class="form-control password" id="password" name="password" placeholder="Masukkan password Anda" required>
+					<i id="password-icon" class="fas fa-check-circle form-control-feedback text-success password" style="display: none;"></i>
+					<i id="password-icon" class="fas fa-times-circle form-control-feedback text-danger password" style="display: none;"></i>
+				</div>
+				<div class="invalid-feedback password">
+					Password harus terdiri dari minimal 8 karakter.
+				</div>
+				<div class="invalid-feedback password">
+					Password harus mengandung angka dan huruf.
+				</div>
+				<div class="valid-feedback password">
+					Terima kasih!
+				</div>
+			</div>
+			
+			<button type="submit" class="btn btn-primary">Submit</button>
+		</form>
+	</div>
+
+	<!-- Load Bootstrap JS and jQuery -->
+	<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+
+	<!-- Validate form using Bootstrap -->
+	<script>
+		var form = $('#email-form');
+
+		// Get the inputs.
+var email = form.find('.email');
+var emailValid = form.find('.valid-feedback.email');
+var emailInvalid = form.find('.invalid-feedback.email');
+var emailCheck = form.find('.fa-check-circle.email');
+var emailTimes = form.find('.fa-times-circle.email');
+var password = form.find('.password');
+var passwordValid = form.find('.valid-feedback.password').last();
+var passwordInvalid = form.find('.invalid-feedback.password');
+var passwordLength = form.find('.invalid-feedback.password').first();
+var passwordChars = form.find('.invalid-feedback.password').last();
+var passwordCheck = form.find('.fa-check-circle.password');
+var passwordTimes = form.find('.fa-times-circle.password');
+
+// Email validation function.
+function validateEmail() {
+var emailValue = email.val().trim();
+var emailRegex = /^[^\s@]+@[^\s@]+.[^\s@]+$/;
+if (emailValue === '') {
+email.removeClass('is-valid is-invalid');
+emailValid.hide();
+emailInvalid.hide();
+emailCheck.hide();
+emailTimes.hide();
+} else if (emailRegex.test(emailValue)) {
+email.removeClass('is-invalid').addClass('is-valid');
+emailValid.show();
+emailInvalid.hide();
+emailCheck.show();
+emailTimes.hide();
+} else {
+email.removeClass('is-valid').addClass('is-invalid');
+emailValid.hide();
+emailInvalid.show();
+emailCheck.hide();
+emailTimes.show();
+}
+}
+
+// Password validation function.
+function validatePassword() {
+var passwordValue = password.val().trim();
+var passwordLengthRegex = /.{8,}/;
+var passwordCharsRegex = /^(?=.[A-Za-z])(?=.\d)[A-Za-z\d]{8,}$/;
+if (passwordValue === '') {
+password.removeClass('is-valid is-invalid');
+passwordValid.hide();
+passwordInvalid.hide();
+passwordCheck.hide();
+passwordTimes.hide();
+} else if (passwordLengthRegex.test(passwordValue) && passwordCharsRegex.test(passwordValue)) {
+password.removeClass('is-invalid').addClass('is-valid');
+passwordValid.show();
+passwordInvalid.hide();
+passwordCheck.show();
+passwordTimes.hide();
+} else {
+password.removeClass('is-valid').addClass('is-invalid');
+if (!passwordLengthRegex.test(passwordValue)) {
+passwordLength.show();
+passwordChars.hide();
+} else if (!passwordCharsRegex.test(passwordValue)) {
+passwordLength.hide();
+passwordChars.show();
+}
+passwordValid.hide();
+passwordInvalid.show();
+passwordCheck.hide();
+passwordTimes.show();
+}
+}
+
+// Validate email and password on input change.
+email.on('input', validateEmail);
+password.on('input', validatePassword);
+
+// Validate email and password on form submit.
+form.on('submit', function(event) {
+event.preventDefault();
+validateEmail();
+validatePassword();
+if (email.hasClass('is-valid') && password.hasClass('is-valid')) {
+alert('Form submitted!');
+}
+});
+</script>
+
+</body>
+</html>

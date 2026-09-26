@@ -1,0 +1,562 @@
+{% extends 'base/base.html' %}
+{% block title %}{{ titlePage }}{% endblock %}
+{% block head %}
+{{ super() }}
+<!-- CSS khusus halaman ini -->
+
+<!-- DataTables -->
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') }}">
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/datatables-responsive/css/responsive.bootstrap4.min.css') }}">
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/datatables-buttons/css/buttons.bootstrap4.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='adminlte/adminlte.min.css') }}">
+<!-- Load Bootstrap CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.5.6/css/buttons.dataTables.min.css">
+<!-- Datetimepicker -->
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css') }}">
+<!-- Custome CSS Datatable-->
+<style>
+  #example1 td:nth-child(0),
+  #example1 td:nth-child(1),
+  #example1 td:nth-child(2),
+  #example1 td:nth-child(3),
+  #example1 td:nth-child(4),
+  #example1 td:nth-child(5) {
+    white-space: nowrap;
+  }
+
+  .modal-dialog.custom {
+    max-width: 700px;
+  }
+
+  .modal-body {
+    max-height: 670px;
+    overflow-y: auto;
+  }
+
+  /* Improved visibility for date inputs, especially in dark mode */
+  .datetimepicker-input {
+    background-color: #ffffff !important;
+    color: #495057 !important;
+  }
+
+  .datetimepicker-input[readonly] {
+    background-color: #ffffff !important;
+    color: #495057 !important;
+    opacity: 1;
+  }
+
+  /* Ensure the calendar icon and text are visible in dark mode if parent has dark theme */
+  .dark-mode .datetimepicker-input {
+    background-color: #3f474e !important;
+    color: #ffffff !important;
+    border: 1px solid #6c757d !important;
+  }
+  
+  /* Datepicker Styling */
+  .datepicker-input-custom {
+    cursor: pointer;
+    background-color: #fff !important;
+  }
+  
+  .bootstrap-datetimepicker-widget.dropdown-menu {
+    min-width: 300px !important;
+  }
+</style>
+
+{% endblock %}
+{% block content %}
+<!--  ------------ ------------ ------------Isi content halaman ini------------ ------------ ------------ -->
+
+<div class="content-wrapper">
+  <!-- Content Header (Page header) -->
+  <section class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-left">
+            <li class="breadcrumb-item"><a href="#">DEPARTEMEN PMC</a></li>
+            <li class="breadcrumb-item active">Nomor Surat</li>
+          </ol>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-right">
+            <li><a href="#"> Automatic Log out :&nbsp;</a></li>
+            <li><span id="timer">00:00:00</span></li>
+          </ol>
+        </div>
+      </div>
+    </div><!-- /.container-fluid -->
+  </section>
+
+  <!-- Main content -->
+  <section class="content">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Data Nomor Surat</h3>
+              <div class="card-tools">
+                <button class="btn btn-success" id="btnRefresh">Refresh</button>
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#formModal">
+                  Booking Nomor Surat
+                </button>
+              </div>
+            </div>
+
+            <!-- Date and Status Filter Section -->
+            <div class="card-body border-bottom">
+              <div class="row">
+                <div class="col-md-3">
+                  <div class="form-group">
+                    <label>Tanggal Awal:</label>
+                    <div class="input-group date" id="startDateDiv" data-target-input="nearest">
+                      <input type="text" class="form-control datetimepicker-input datepicker-input-custom" id="startDate" name="startDate" data-target="#startDateDiv" placeholder="Pilih Tanggal Awal" data-toggle="datetimepicker">
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="form-group">
+                    <label>Tanggal Akhir:</label>
+                    <div class="input-group date" id="endDateDiv" data-target-input="nearest">
+                      <input type="text" class="form-control datetimepicker-input datepicker-input-custom" id="endDate" name="endDate" data-target="#endDateDiv" placeholder="Pilih Tanggal Akhir" data-toggle="datetimepicker">
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-group">
+                    <label for="statusFilter">Status File:</label>
+                    <select class="form-control" id="statusFilter" name="statusFilter">
+                      <option value="all">Semua</option>
+                      <option value="uploaded">Sudah Upload</option>
+                      <option value="not_uploaded">Belum Upload</option>
+                      <option value="tidak_jadi">Tidak Jadi Dipakai</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-group">
+                    <label for="pembuatFilter">Pembuat:</label>
+                    <select class="form-control" id="pembuatFilter" name="pembuatFilter">
+                      <option value="all">Semua User</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-2" style="display: flex; align-items: flex-end;">
+                  <div class="form-group btn-block">
+                    <button class="btn btn-info btn-block" id="btnFilter"><i class="fas fa-filter"></i> Filter</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Notification Panel for Pending Uploads -->
+            <div class="card-body pb-0" id="notificationPanel" style="display: none;">
+              <div class="alert alert-warning d-flex align-items-center justify-content-between flex-wrap" role="alert" style="border-radius: 8px; border-left: 5px solid #ffc107; background-color: #fff3cd; color: #856404; margin-bottom: 0;">
+                <div>
+                  <i class="fas fa-exclamation-triangle mr-2"></i>
+                  Ada <strong id="totalPendingCount">0</strong> dokumen yang belum di-upload file-nya.
+                </div>
+                <button type="button" class="btn btn-xs btn-warning ml-2" id="btnShowPendingDetails" style="font-weight: 600; border: 1px solid #ffeeba;">
+                  <i class="fas fa-eye"></i> Lihat Detail Tanggung Jawab
+                </button>
+              </div>
+            </div>
+
+            <div class="card-body">
+              <table id="example1" class="table table-bordered" style="width: 100%;">
+                <thead>
+                  <tr>
+                    <th>NO</th>
+                    <th>ID</th>
+                    <th>TANGGAL</th>
+                    <th>NOMOR SURAT</th>
+                    <th>NAMA DOKUMEN</th>
+                    <th>TUJUAN</th>
+                    <th>FILE</th>
+                    <th>STATUS</th>
+                    <th style="width: 80px; justify-content: center; text-align: center;">AKSI</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Data rows will be inserted here by your code -->
+                </tbody>
+                <!--tfoot>
+                  <tr>
+                    <th>NO</th>
+                    <th>ID</th>
+                    <th>NAMA PEMINJAM</th>
+                    <th>DEPT</th>
+                    <th>TANGGAL PINJAM</th>
+                    <th>BARANG YANG DIPINJAM</th>
+                    <th>DIPINJAMKAN OLEH</th>
+                    <th>TANGGAL KEMBALI</th>
+                    <th>BARANG YANG KEMBALI</th>
+                    <th>DIKEMBALIKAN KE</th>
+                    <th>STATUS</th>
+                    <th>KETERANGAN</th>
+                    <th style="width: 80px; justify-content: center; text-align: center;">AKSI</th>
+                  </tr>
+                </tfoot-->
+              </table>
+            </div>
+            <!-- /.card-body -->
+          </div>
+          <!-- /.card -->
+        </div>
+        <!-- /.col -->
+      </div>
+      <!-- /.row -->
+    </div>
+    <!-- /.container-fluid -->
+  </section>
+  <!-- /.content -->
+</div>
+<!-- /.content-wrapper -->
+
+<!-- Modal Denied Edit and Delete -->
+<div class="modal fade" id="deniedModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deniedModalLabel">Hapus Data</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Pesan akan diinput disini-->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Ok</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Modal Tambah-->
+<div class="modal fade" id="formModal" tabindex="-1" role="dialog" aria-labelledby="tambahModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered custom" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="tambahModalLabel">Tambah Data</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="alert-container-tambah"></div>
+        <form id="form-tambah-data" class="needs-validation" novalidate enctype="multipart/form-data">
+          <div class="row">
+            <div class="col-md-12">
+              <div class="form-group">
+                <label>Tanggal :</label>
+                <div class="input-group date" id="tanggalTambahDiv" data-target-input="nearest">
+                  <input type="text" class="form-control datetimepicker-input datepicker-input-custom" id="tanggalTambah" name="tanggalTambah"
+                    data-target="#tanggalTambahDiv" placeholder="Pilih Tanggal" data-toggle="datetimepicker" />
+                  <div class="invalid-feedback inv-tanggalTambah-0">
+                    Harus diisi.
+                  </div>
+                  <div class="valid-feedback tanggalTambah">
+                    Valid!
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="nomorSuratTambah">Nomor Surat :</label>
+                <input type="text" class="form-control" id="nomorSuratTambah" name="nomorSuratTambah"
+                  placeholder="Masukkan Nomor Surat" required autocomplete="off">
+                <div id="check-nosurat-tambah" class="mt-1" style="font-size: 0.85rem; display: none;">
+                  <!-- Feedback will be injected here -->
+                </div>
+                <div class="invalid-feedback inv-nomorSuratTambah-0">
+                  Nomor Surat harus diisi.
+                </div>
+                <div class="valid-feedback nomorSuratTambah">
+                  Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="namaDokumenTambah">Nama Dokumen :</label>
+                <textarea class="form-control" id="namaDokumenTambah" name="namaDokumenTambah"
+                  placeholder="Masukkan Nama Dokumen" required></textarea>
+                <div class="invalid-feedback inv-namaDokumenTambah-0">
+                  Nama Dokumen harus diisi.
+                </div>
+                <div class="valid-feedback namaDokumenTambah">
+                  Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="keperluanTambah">Tujuan :</label>
+                <textarea class="form-control" id="keperluanTambah" name="keperluanTambah" placeholder="Masukkan Tujuan"
+                  required></textarea>
+                <div class="invalid-feedback inv-keperluanTambah-0">
+                  Tujuan harus diisi.
+                </div>
+                <div class="valid-feedback keperluanTambah">
+                  Valid!
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="fileTambah">Upload Dokumen :</label>
+                <input type="file" class="form-control-file" id="fileTambah" name="file">
+                <small class="form-text text-muted">Format: pdf, doc, docx, jpg, png.</small>
+              </div>
+            </div>
+          </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-primary">Tambah</button>
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal edit -->
+<div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered custom" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-white">
+        <h5 class="modal-title" id="editModalLabel">Edit Data</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="alert-container-edit"></div>
+        <form id="form-Edit-data" class="needs-validation" novalidate enctype="multipart/form-data">
+          <div class="row">
+            <div class="col-md-12">
+              <div class="form-group">
+                <input type="hidden" id="originalData" name="originalData" value="">
+                <input type="hidden" class="form-control idEdit" id="idEdit">
+
+                <label>Tanggal :</label>
+                <div class="input-group date" id="tanggalEditDiv" data-target-input="nearest">
+                  <input type="text" class="form-control datetimepicker-input datepicker-input-custom" id="tanggalEdit" name="tanggalEdit"
+                    data-target="#tanggalEditDiv" readonly data-toggle="datetimepicker" />
+                  <div class="invalid-feedback inv-tanggalEdit-0">
+                    Harus diisi.
+                  </div>
+                  <div class="valid-feedback tanggalEdit">
+                    Valid!
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="nomorSuratEdit">Nomor Surat :</label>
+                <input type="text" class="form-control" id="nomorSuratEdit" name="nomorSuratEdit"
+                  placeholder="Masukkan Nomor Surat" required autocomplete="off">
+                <div id="check-nosurat-edit" class="mt-1" style="font-size: 0.85rem; display: none;">
+                  <!-- Feedback will be injected here -->
+                </div>
+                <div class="invalid-feedback inv-nomorSuratEdit-0">
+                  Nomor Surat harus diisi.
+                </div>
+                <div class="valid-feedback nomorSuratEdit">
+                  Valid!
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="namaDokumenEdit">Nama Dokumen :</label>
+                <textarea class="form-control" id="namaDokumenEdit" name="namaDokumenEdit"
+                  placeholder="Masukkan Nama Dokumen" required></textarea>
+                <div class="invalid-feedback inv-namaDokumenEdit-0">
+                  Nama Dokumen harus diisi.
+                </div>
+                <div class="valid-feedback namaDokumenEdit">
+                  Valid!
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="keperluanEdit">Tujuan :</label>
+                <textarea class="form-control" id="keperluanEdit" name="keperluanEdit" placeholder="Masukkan Tujuan"
+                  required></textarea>
+                <div class="invalid-feedback inv-keperluanEdit-0">
+                  Tujuan harus diisi.
+                </div>
+                <div class="valid-feedback keperluanEdit">
+                  Valid!
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="statusEdit">Status :</label>
+                <select class="form-control" id="statusEdit" name="statusEdit">
+                  <option value="Aktif">Aktif</option>
+                  <option value="Tidak Jadi Dipakai">Tidak Jadi Dipakai</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="fileEdit">Ganti Dokumen (Opsional) :</label>
+                <input type="file" class="form-control-file" id="fileEdit" name="file">
+                <small class="form-text text-muted">Biarkan kosong jika tidak ingin mengganti file.</small>
+              </div>
+            </div>
+          </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-warning">Simpan Perubahan</button>
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal History -->
+<div class="modal fade" id="historyModal" tabindex="-1" role="dialog" aria-labelledby="historyModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title" id="historyModalLabel">Riwayat Dokumen</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover" id="tableHistory">
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Nama File</th>
+                <th>Diarsipkan Oleh</th>
+                <th>Waktu Arsip</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- History rows will be populated here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Delete -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteModalLabel">Hapus Data</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Pesan akan diinput disini-->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-danger btn-confirm-delete">Hapus</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Pending Detail -->
+<div class="modal fade" id="pendingDetailModal" tabindex="-1" role="dialog" aria-labelledby="pendingDetailModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content" style="border-radius: 8px;">
+      <div class="modal-header bg-warning text-dark">
+        <h5 class="modal-title" id="pendingDetailModalLabel"><i class="fas fa-exclamation-circle mr-2"></i>Tanggung Jawab Upload File</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted">Berikut adalah daftar user pembuat booking yang belum mengunggah berkas/file:</p>
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover" id="tablePendingDetails" style="width: 100%;">
+            <thead class="bg-light">
+              <tr>
+                <th>User Pembuat</th>
+                <th class="text-center" style="width: 150px;">Belum Upload</th>
+                <th class="text-center" style="width: 80px;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Dynamic content -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Alert-->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" data-backdrop="false"
+  style="position: fixed; top: 0; right: 0; margin: 0; transform: translate(0, 0); pointer-events: none;">
+  <div class="modal-dialog modal-sm" role="document"
+    style="margin-top: 10px; margin-right: 25px; pointer-events: auto;">
+    <div class="modal-content" style="background-color: white; border-radius: 0; pointer-events: auto;">
+      <div class="alert d-flex align-items-center" role="alert" style="border-radius: 0; margin: 0;">
+        <i class="fas fa-check-circle mr-2"></i> <span id="message">Dokumen berhasil dibuat.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<script>
+  const currentUsername = "{{ username }}";
+</script>
+<!-- All JavaScript khusus halaman ini -->
+<!-- Bootstrap 4 -->
+<script src="{{ url_for('static', filename='plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+<!-- DataTables  & Plugins -->
+<script src="{{ url_for('static', filename='plugins/datatables/jquery.dataTables.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
+<script
+  src="{{ url_for('static', filename='plugins/datatables-responsive/js/dataTables.responsive.min.js') }}"></script>
+<script
+  src="{{ url_for('static', filename='plugins/datatables-responsive/js/responsive.bootstrap4.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-buttons/js/dataTables.buttons.min.js') }}"></script>
+<script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.flash.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.5.6/js/dataTables.buttons.min.js"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.bootstrap4.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/jszip/jszip.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/pdfmake/pdfmake.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/pdfmake/vfs_fonts.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.html5.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.print.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.colVis.min.js') }}"></script>
+<!-- Date-range-picker -->
+<script src="{{ url_for('static', filename='plugins/moment/moment.min.js') }}"></script>
+<script
+  src="{{ url_for('static', filename='plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js') }}"></script>
+<!-- Control Full Page Khusus Permintaan IT-->
+<script src="{{ url_for('send_js', path='pmcnomorsurat.js') }}"></script>
+
+{% endblock %}

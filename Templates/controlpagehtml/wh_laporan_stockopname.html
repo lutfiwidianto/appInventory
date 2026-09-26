@@ -1,0 +1,160 @@
+{% extends 'base/base.html' %}
+{% block title %}{{ titlePage }}{% endblock %}
+{% block head %}
+{{ super() }}
+<!-- CSS khusus halaman ini -->
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') }}">
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/datatables-responsive/css/responsive.bootstrap4.min.css') }}">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='adminlte/adminlte.min.css') }}">
+<!-- Load Bootstrap CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+<!-- Datetimepicker -->
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css') }}">
+<!-- Custome CSS Datatable-->
+<style>
+  .modal-dialog.custom {
+    max-width: 700px;
+  }
+
+  .modal-body {
+    max-height: 670px;
+    overflow-y: auto;
+  }
+
+  /* Custom styling for length menu input */
+  .dataTables_length select.custom-select {
+    width: auto;
+    /* Sesuaikan lebar sesuai kebutuhan */
+  }
+
+  .bootstrap-datetimepicker-widget.dropdown-menu {
+    min-width: 300px !important;
+  }
+</style>
+{% endblock %}
+{% block content %}
+<!--  ------------ ------------ ------------Isi content halaman ini------------ ------------ ------------ -->
+<div class="content-wrapper">
+  <!-- Content Header (Page header) -->
+  <section class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-left">
+            <li class="breadcrumb-item"><a href="#">DEPARTEMEN WAREHOUSE</a></li>
+            <li class="breadcrumb-item active">WH Laporan / Stock Opname</li>
+          </ol>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-right">
+            <li><a href="#"> Automatic Log out :&nbsp;</a></li>
+            <li><span id="timer">00:00:00</span></li>
+          </ol>
+        </div>
+      </div>
+    </div><!-- /.container-fluid -->
+  </section>
+  <!-- Main content -->
+  <section class="content">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <!-- /.card-header -->
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-2">
+                  <div class="form-group">
+                    <label for="tanggalAwal">Tanggal Mulai</label>
+                    <div class="input-group date" id="tanggalAwalDiv" data-target-input="nearest">
+                      <input type="text" class="form-control datetimepicker-input text-center font-weight-bold" id="tanggalAwal" name="tanggalAwal"
+                        data-target="#tanggalAwalDiv" data-toggle="datetimepicker" autocomplete="off" placeholder="Pilih Tanggal Mulai" style="cursor: pointer; border-radius: 6px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);" />
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-group">
+                    <label for="tanggalAkhir">Tanggal Akhir</label>
+                    <div class="input-group date" id="tanggalAkhirDiv" data-target-input="nearest">
+                      <input type="text" class="form-control datetimepicker-input text-center font-weight-bold" id="tanggalAkhir" name="tanggalAkhir"
+                        data-target="#tanggalAkhirDiv" data-toggle="datetimepicker" autocomplete="off" placeholder="Pilih Tanggal Akhir" style="cursor: pointer; border-radius: 6px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);" />
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-8 text-right" style="margin-top: 30px;">
+                  <!-- Tombol Download Excel -->
+                  <button id="downloadExcel" class="btn btn-success float-right">Download Excel</button>
+                </div>
+              </div>
+              <br>
+              <br>
+              <table id="example1" class="display" style="width:100%">
+                <thead>
+                  <tr>
+                    <th>KODE BARANG</th>
+                    <th>NAMA BARANG IDN</th>
+                    <th>SALDO AWAL</th>
+                    <th>QTY IN</th>
+                    <th>QTY OUT</th>
+                    <th>SALDO AKHIR</th>
+                    <th>SATUAN</th>
+                    <th>LOKASI</th>
+                    <th>KATEGORI BARANG</th>
+                    <th>JENIS BARANG</th>
+                    <th>CLASS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Data rows will be inserted here by your code -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- /.card-body -->
+          </div>
+          <!-- /.card -->
+        </div>
+        <!-- /.col -->
+      </div>
+      <!-- /.row -->
+    </div>
+    <!-- /.container-fluid -->
+  </section>
+  <!-- /.content -->
+</div>
+<!-- /.content-wrapper -->
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<!-- All JavaScript khusus halaman ini -->
+
+<!-- Bootstrap 4 -->
+<script src="{{ url_for('static', filename='plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+<!-- DataTables -->
+<script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
+<script
+  src="{{ url_for('static', filename='plugins/datatables-responsive/js/dataTables.responsive.min.js') }}"></script>
+<script
+  src="{{ url_for('static', filename='plugins/datatables-responsive/js/responsive.bootstrap4.min.js') }}"></script>
+<!-- DataTables Buttons -->
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.colVis.min.js"></script>
+<script src="{{ url_for('static', filename='plugins/jszip/jszip.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.html5.min.js') }}"></script>
+
+<!-- Moment and Tempus Dominus Datetimepicker -->
+<script src="{{ url_for('static', filename='plugins/moment/moment.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js') }}"></script>
+
+<!-- Kode JavaScript yang disertakan sebelumnya (wh_laporan_stockopname.js) -->
+<script src="{{ url_for('send_js', path='wh_laporan_stockopname.js') }}"></script>
+
+{% endblock %}

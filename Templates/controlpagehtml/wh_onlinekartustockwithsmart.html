@@ -1,0 +1,186 @@
+{% extends 'base/base.html' %}
+{% block title %}{{ titlePage }}{% endblock %}
+{% block head %}
+{{ super() }}
+<!-- CSS khusus halaman ini -->
+
+<!-- DataTables -->
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/datatables-responsive/css/responsive.bootstrap4.min.css') }}"> 
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/datatables-buttons/css/buttons.bootstrap4.min.css') }}"> 
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/select2/css/select2.min.css') }}"> 
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css') }}"> 
+<link rel="stylesheet" href="{{ url_for('static', filename='adminlte/adminlte.min.css') }}">
+<!-- Load Bootstrap CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.5.6/css/buttons.dataTables.min.css">
+<style>
+
+#autocomplete-results {
+  overflow-y: auto;
+  max-height: 300px;
+}
+
+  .modal-dialog.custom {
+  max-width: 1000px;
+}
+
+.modal-body {
+  max-height: 670px;
+  overflow-y: auto;
+}
+
+</style>
+{% endblock %}
+{% block content %}
+<!--  ------------ ------------ ------------Isi content halaman ini------------ ------------ ------------ -->
+
+  <div class="content-wrapper">
+  <!-- Content Header (Page header) -->
+  <section class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-left">
+            <li class="breadcrumb-item"><a href="#">DEPARTEMEN WAREHOUSE</a></li>
+            <li class="breadcrumb-item active">Online Kartu Stock</li>
+          </ol>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-right">
+            <li><a href="#"> Automatic Log out :&nbsp;</a></li>
+            <li><span id="timer">00:00:00</span></li>
+          </ol>
+        </div>
+      </div>
+    </div><!-- /.container-fluid -->
+  </section>
+
+  <!-- Main content -->
+  <section class="content">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h1 class="card-title">Cek Online Data Kartu Stock</h1>
+              <div id="errorAlert" class="btn btn-danger float-right d-none" type="button" data-bs-dismiss="alert" aria-label="Close" role="alert">
+                "Rentang tanggal tidak valid. Tanggal akhir harus setidaknya sama / 1 hari setelah tanggal mulai."
+              </div>              
+            </div>
+            <!-- /.card-header -->
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="form-group">
+                    <label for="namaBarang">Nama Barang</label>
+                    <input id="namaBarang" type="text" class="form-control" placeholder="Input Kode / Nama Barang" autocomplete="off">
+                    <div class="dropdown">
+                      <div id="autocomplete-results" class="dropdown-menu">
+                        <div class="list-group list-group-flush"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-2">
+                  <div class="form-group">
+                    <label for="kodeBarang">Kode Barang</label>
+                    <input id="kodeBarang" type="text" class="form-control" placeholder="" disabled>
+                  </div>
+                </div>
+              </div>            
+              <br>
+              <div class="row">
+                 <div class="col-2">
+                    <label>Tanggal Awal</label>
+                    <input id="tanggalAwal" type="date" class="form-control form-control" placeholder="">
+                 </div>
+                 <div class="col-2">
+                    <label>Tanggal Akhir</label>
+                    <input id="tanggalAkhir" type="date" class="form-control form-control" placeholder="">
+                 </div>
+                 
+              </div>
+  
+              <br>
+              <div class="row">
+                 <div class="col-2">
+                    <button type="button" id="btnSubmit" class="btn btn-success">
+                       Filter Data
+                    </button>
+                 </div>
+              </div>
+              <br>
+              <br>
+              <table id="example1" class="table table-bordered dt-responsive" style="width:100%">
+                <thead>
+                  <tr>
+                    <th rowspan="2" style="text-align: center; vertical-align: middle;">NO</th>
+                    <th rowspan="2" style="text-align: center; vertical-align: middle;">TANGGAL</th>
+                    <th rowspan="2" style="text-align: center; vertical-align: middle;">NO BON / REFERENSI</th>
+                    <th rowspan="2" style="text-align: center; vertical-align: middle;">KODE BARANG</th>
+                    <th rowspan="2" style="width: 300px; text-align: center; vertical-align: middle;">KETERANGAN</th>
+                    <th colspan="4" style="text-align: center; vertical-align: middle;">QTY</th>
+                    <th colspan="2" style="text-align: center; vertical-align: middle;">SALDO</th>
+                    <th rowspan="2" style="text-align: center; vertical-align: middle;">UNIT</th>
+                    <th rowspan="2" style="text-align: center; vertical-align: middle;">KATEGORI BARANG</th>
+                  </tr>
+                  <tr>
+                    <th style="text-align: center; vertical-align: middle;">IN APP</th>
+                    <th style="text-align: center; vertical-align: middle;">IN SMART</th>
+                    <th style="text-align: center; vertical-align: middle;">OUT APP</th>
+                    <th style="text-align: center; vertical-align: middle;">OUT SMART</th>
+                    <th style="text-align: center; vertical-align: middle;">APP</th>
+                    <th style="text-align: center; vertical-align: middle;">SMART</th>
+                  </tr>
+                </thead>                
+                <tbody>
+                  <!-- Data rows will be inserted here by your code -->
+                </tbody>
+              </table>
+                            
+              </div>
+            <!-- /.card-body -->
+          </div>
+          <!-- /.card -->
+        </div>
+        <!-- /.col -->
+      </div>
+      <!-- /.row -->
+    </div>
+    <!-- /.container-fluid -->
+  </section>
+  <!-- /.content -->
+</div>
+<!-- /.content-wrapper -->
+
+{% endblock %}
+{% block scripts %}
+  {{ super() }}
+    <!-- All JavaScript khusus halaman ini --> 
+    <script src="{{ url_for('static', filename='plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <!-- DataTables  & Plugins -->
+    <script src="{{ url_for('static', filename='plugins/datatables/jquery.dataTables.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-responsive/js/dataTables.responsive.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-responsive/js/responsive.bootstrap4.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/dataTables.buttons.min.js') }}"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.flash.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.5.6/js/dataTables.buttons.min.js"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.bootstrap4.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/jszip/jszip.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/pdfmake/pdfmake.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/pdfmake/vfs_fonts.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.html5.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.print.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.colVis.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='plugins/select2/js/select2.min.js') }}"></script>
+
+  
+      <!-- Date-range-picker -->
+      <script src="{{ url_for('static', filename='plugins/moment/moment.min.js') }}"></script>
+      <script src="{{ url_for('static', filename='plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js') }}"></script>
+    <!-- Control Full Page Khusus Page ini-->
+    <script src="{{ url_for('send_js', path='wh_onlinekartustockwithsmart.js') }}"></script>
+
+{% endblock %}

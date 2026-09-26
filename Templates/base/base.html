@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% block head %}
+  <!-- CSS & JS untuk semua halaman -->
+  <!-- Google Font: Source Sans Pro -->
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='plugins/fontawesome-free/css/all.css') }}">
+  <!-- Toggle Button Switch Themas-->
+  <link rel="stylesheet" href="{{ url_for('static', filename='general/toggle.css') }}">
+  <!-- Admin LTE3 Themas -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='adminlte/adminlte.min.css') }}">
+  <!-- Jquery -->
+  <script src="{{ url_for('static', filename='jquery/jquery-3.6.0.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='jquery/jquery-ui.min.js') }}"></script>
+
+  <!-- SweetAlert2 -->
+  <script src="{{ url_for('static', filename='plugins/sweetalert2/sweetalert2.all.min.js') }}"></script>
+
+
+  <!-- Custom CSS for Submenu Icon Style -->
+  <style>
+    html {
+      zoom: 65%;
+    }
+
+    /* Fix height for 65% zoom */
+    .content-wrapper {
+      min-height: calc(100vh / 0.65) !important;
+    }
+
+
+    .modal-backdrop {
+      width: 200vw !important;
+      height: 200vh !important;
+    }
+
+    .sidebar-menu .treeview-menu li::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 0;
+      transform: translateY(-50%);
+      width: 0;
+      height: 0;
+      border-top: 5px solid transparent;
+      border-left: 5px solid #c8d6e5;
+      border-bottom: 5px solid transparent;
+      border-right: none;
+    }
+
+    .sidebar-menu .treeview-menu li.active::before,
+    .sidebar-menu .treeview-menu li:hover::before {
+      border-left: 5px solid #1e282c;
+    }
+  </style>
+  {% endblock %}
+</head>
+{% if 'theme' in session and session['theme'] == 'dark-mode' %}
+
+<body class="hold-transition sidebar-mini dark-mode">
+  {% else %}
+
+  <body class="hold-transition sidebar-mini light-mode">
+    {% endif %}
+
+    <div class="wrapper">
+      <!-- Isi header halaman di sini -->
+      {% include "./includes/nav_bar.html" %}
+      <!-- Isi sidebar halaman di sini -->
+      {% include "./includes/side_bar.html" %}
+
+      {% block content %}
+      <!-- Isi content halaman di sini -->
+      {% endblock %}
+
+      <!-- Isi footer halaman di sini -->
+      {% include "./includes/footer.html" %}
+    </div>
+
+    {% block scripts %}
+
+    <!-- JavaScript untuk semua halaman -->
+    <!-- AdminLTE App -->
+    <script src="{{ url_for('static', filename='dist/js/adminlte.min.js') }}"></script>
+    <!-- Control Themas dan Auto Logout -->
+    <script src="{{ url_for('static', filename='general/script.js') }}"></script>
+    {% endblock %}
+  </body>
+
+</html>

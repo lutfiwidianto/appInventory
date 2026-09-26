@@ -1,0 +1,336 @@
+{% extends "base/base.html" %}
+
+{% block title %}Cloudflare Tunnel{% endblock %}
+
+{% block head %}
+{{ super() }}
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+  <!-- Content Header (Page header) -->
+  <section class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-left">
+            <li class="breadcrumb-item"><a href="#">Settings</a></li>
+            <li class="breadcrumb-item active">Cloudflare Tunnel</li>
+          </ol>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-right">
+            <li><a href="#"> Automatic Log out :&nbsp;</a></li>
+            <li><span id="timer">00:00:00</span></li>
+          </ol>
+        </div>
+      </div>
+    </div><!-- /.container-fluid -->
+  </section>
+
+  <!-- Main content -->
+  <section class="content">
+    <div class="container-fluid">
+      
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Akses Publik (Cloudflare Tunnel)</h2>
+            </div>
+            <div class="card-body">
+            <div class="alert alert-info alert-dismissible">
+              <h5><i class="icon fas fa-info-circle"></i> Info!</h5>
+              Cloudflare Tunnel memungkinkan localhost port 80 diakses dari internet secara aman dan terenkripsi tanpa perlu membuka port (port forwarding) di router.
+            </div>
+
+            <div class="card card-outline card-primary mt-4">
+              <div class="card-header">
+                <h3 class="card-title font-weight-bold">Status Tunnel</h3>
+                <div class="card-tools">
+                  <span id="badge-status" class="badge badge-secondary" style="font-size: 14px; padding: 5px 10px;">LOADING...</span>
+                </div>
+              </div>
+              <div class="card-body">
+                <!-- Tambahan Instalasi Cloudflare -->
+                <div id="installWarning" class="alert alert-warning" style="display: none;">
+                  <h5><i class="icon fas fa-exclamation-triangle"></i> Cloudflare Belum Terinstall!</h5>
+                  <p>Sistem mendeteksi bahwa aplikasi Cloudflare (cloudflared) belum tersedia. Anda harus mengunduh dan memasangnya terlebih dahulu sebelum dapat menjalankan tunnel.</p>
+                  <button type="button" class="btn btn-outline-dark" id="btnDownload" onclick="downloadCloudflare()">
+                    <i class="fas fa-download"></i> Download & Install Cloudflare
+                  </button>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-3">
+                    <div class="form-group">
+                      <label for="tunnelMode">Mode Koneksi Tunnel</label>
+                      <select class="form-control" id="tunnelMode" onchange="toggleMode()">
+                        <option value="token">Custom Domain (Zero Trust - Pakai Token)</option>
+                        <option value="quick">Quick Tunnel (Random URL)</option>
+                      </select>
+                      <small class="form-text text-muted" id="modeHelp">Menggunakan domain pribadi Anda via Token Zero Trust.</small>
+                    </div>
+                  </div>
+                  <div class="col-md-4" id="tokenGroup">
+                    <div class="form-group">
+                      <label for="tunnelToken">Cloudflare Tunnel Token <small class="text-muted">(Connector Token)</small></label>
+                      <input type="password" class="form-control" id="tunnelToken" placeholder="eyJhIjoiOD...">
+                      <small class="form-text text-muted">Buat tunnel di Dashboard Cloudflare Zero Trust, lalu salin Tokennya ke sini.</small>
+                    </div>
+                  </div>
+                  <div class="col-md-3" id="apiKeyGroup">
+                    <div class="form-group">
+                      <label for="tunnelApiKey">Cloudflare API Key <small class="text-muted">(Opsional)</small></label>
+                      <div class="input-group">
+                        <input type="password" class="form-control" id="tunnelApiKey" placeholder="Masukkan API Key...">
+                        <div class="input-group-append">
+                          <button class="btn btn-outline-info" type="button" id="btnFetchUrl" onclick="fetchUrlFromApi()" title="Auto-ambil URL dari Cloudflare">
+                            <i class="fas fa-magic"></i>
+                          </button>
+                        </div>
+                      </div>
+                      <small class="form-text text-muted">API Key untuk auto-ambil URL tunnel dari Cloudflare. Buat di <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank">dash.cloudflare.com</a> dengan permission <b>Tunnel:Read</b>.</small>
+                    </div>
+                  </div>
+                  <div class="col-md-2" id="domainGroup">
+                    <div class="form-group">
+                      <label for="tunnelDomain">URL Publik <span class="badge badge-secondary">Auto</span></label>
+                      <input type="text" class="form-control" id="tunnelDomain" placeholder="https://domain.com" readonly>
+                      <small class="form-text text-muted">Diisi otomatis via API Key, atau input manual.</small>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mt-4 text-center p-4 bg-light border rounded">
+                  <h6 class="font-weight-bold text-muted">TAUTAN AKSES PUBLIK AKTIF:</h6>
+                  <div class="mt-2" style="font-size: 20px; font-weight: bold;">
+                    <a href="#" id="activeUrl" target="_blank">-</a> 
+                    <button class="btn btn-sm btn-outline-secondary ml-2" onclick="copyUrl()"><i class="far fa-copy"></i> Salin Tautan</button>
+                  </div>
+                </div>
+              </div>
+              <div class="card-footer text-right">
+                <button type="button" class="btn btn-secondary mr-2" id="btnLog" onclick="toggleLog()">
+                  <i class="fas fa-terminal"></i> Lihat Log Cloudflare
+                </button>
+                <button type="button" class="btn btn-primary mr-2" id="btnSave" onclick="saveConfig()">
+                  <i class="fas fa-save"></i> Simpan Pengaturan
+                </button>
+                <button type="button" class="btn btn-success" id="btnAction" onclick="toggleTunnel()">
+                  <i class="fas fa-play"></i> Jalankan Tunnel
+                </button>
+              </div>
+            </div>
+
+            <!-- Log Panel -->
+            <div id="logPanel" class="card card-outline card-dark mt-3" style="display:none;">
+              <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-terminal mr-2"></i>Log Output Cloudflare</h3>
+                <div class="card-tools">
+                  <button type="button" class="btn btn-sm btn-outline-light" onclick="fetchLog()"><i class="fas fa-sync"></i> Refresh</button>
+                </div>
+              </div>
+              <div class="card-body p-0">
+                <pre id="logOutput" style="background:#1e1e1e;color:#d4d4d4;padding:15px;min-height:150px;max-height:300px;overflow-y:auto;margin:0;font-size:12px;">Belum ada log...</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /.container-fluid -->
+  </section>
+  <!-- /.content -->
+</div>
+<!-- /.content-wrapper -->
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+  let isRunning = false;
+  let isInstalled = false;
+
+  function toggleMode() {
+    const mode = $('#tunnelMode').val();
+    if (mode === 'token') {
+      $('#tokenGroup').show();
+      $('#domainGroup').show();
+      $('#modeHelp').text('Menggunakan domain pribadi Anda via Token Zero Trust.');
+    } else {
+      $('#tokenGroup').hide();
+      $('#domainGroup').hide();
+      $('#modeHelp').text('Akan menghasilkan URL publik acak (trycloudflare.com).');
+    }
+  }
+
+  function fetchStatus() {
+    $.get('/api/cloudflare/status', function(data) {
+      isRunning = data.running;
+      isInstalled = data.installed;
+      
+      $('#tunnelMode').val(data.mode);
+      $('#tunnelToken').val(data.token);
+      $('#tunnelDomain').val(data.custom_domain);
+      $('#tunnelApiKey').val(data.api_key);
+      toggleMode();
+
+      if (!isInstalled) {
+        $('#installWarning').show();
+        $('#badge-status').removeClass('badge-secondary badge-success badge-info badge-danger').addClass('badge-warning').text('NOT INSTALLED');
+        $('#btnAction').prop('disabled', true);
+        $('#activeUrl').attr('href', '#').text('Cloudflare belum terinstall');
+      } else {
+        $('#installWarning').hide();
+
+        if (isRunning) {
+          $('#badge-status').removeClass('badge-secondary badge-danger badge-warning badge-info').addClass('badge-success').text('RUNNING');
+          $('#btnAction').prop('disabled', false).removeClass('btn-success').addClass('btn-danger').html('<i class="fas fa-stop"></i> Hentikan Tunnel');
+          if (data.url) {
+            $('#activeUrl').attr('href', data.url).text(data.url);
+          } else {
+            $('#activeUrl').attr('href', '#').text('Memproses URL...');
+            setTimeout(fetchStatus, 2000); // retry if URL is not yet ready
+          }
+        } else {
+          $('#badge-status').removeClass('badge-secondary badge-success badge-warning badge-danger').addClass('badge-info').text('READY');
+          $('#btnAction').prop('disabled', false).removeClass('btn-danger').addClass('btn-success').html('<i class="fas fa-play"></i> Jalankan Tunnel');
+          $('#activeUrl').attr('href', '#').text('-');
+        }
+      }
+    });
+  }
+
+  function saveConfig(callback) {
+    const data = {
+      mode: $('#tunnelMode').val(),
+      token: $('#tunnelToken').val(),
+      custom_domain: $('#tunnelDomain').val(),
+      api_key: $('#tunnelApiKey').val()
+    };
+    
+    // UI Loading
+    const btn = $('#btnSave');
+    const originalText = btn.html();
+    btn.html('<i class="fas fa-spinner fa-spin"></i> Menyimpan...').prop('disabled', true);
+
+    $.ajax({
+      url: '/api/cloudflare/config',
+      type: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify(data),
+      success: function(res) {
+        if (typeof callback === 'function') callback();
+        else alert(res.message);
+      },
+      error: function(err) {
+        alert('Gagal menyimpan konfigurasi');
+      },
+      complete: function() {
+        btn.html(originalText).prop('disabled', false);
+      }
+    });
+  }
+
+  function toggleTunnel() {
+    const action = isRunning ? 'stop' : 'start';
+    const btn = $('#btnAction');
+    btn.html('<i class="fas fa-spinner fa-spin"></i> Memproses...').prop('disabled', true);
+
+    // Save config first (silently), then toggle tunnel
+    saveConfig(function() {
+      $.post('/api/cloudflare/' + action, function(res) {
+        if (res.status === 'success') {
+          setTimeout(fetchStatus, 1500);
+        } else {
+          alert('Error: ' + res.message);
+          fetchStatus();
+        }
+      }).fail(function() {
+        alert('Terjadi kesalahan.');
+        fetchStatus();
+      });
+    });
+  }
+
+  function fetchUrlFromApi() {
+    const btn = $('#btnFetchUrl');
+    btn.html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
+    // Save first, then fetch
+    saveConfig(function() {
+      $.post('/api/cloudflare/fetch_url', function(res) {
+        if (res.status === 'success') {
+          $('#tunnelDomain').val(res.url);
+          alert('✅ ' + res.message);
+          fetchStatus();
+        } else {
+          alert('❌ ' + res.message);
+        }
+      }).fail(function() {
+        alert('Gagal menghubungi server.');
+      }).always(function() {
+        btn.html('<i class="fas fa-magic"></i>').prop('disabled', false);
+      });
+    });
+  }
+
+  function copyUrl() {
+    const url = $('#activeUrl').text();
+    if (url && url !== '-' && url !== 'Cloudflare belum terinstall' && url !== 'Memproses URL...') {
+      navigator.clipboard.writeText(url).then(function() {
+        alert('Tautan disalin ke clipboard!');
+      }, function(err) {
+        alert('Gagal menyalin tautan');
+      });
+    }
+  }
+
+  function downloadCloudflare() {
+    const btn = $('#btnDownload');
+    const originalText = btn.html();
+    btn.html('<i class="fas fa-spinner fa-spin"></i> Sedang Mengunduh (sekitar 30MB)...').prop('disabled', true);
+
+    $.post('/api/cloudflare/download', function(res) {
+      if (res.status === 'success') {
+        alert(res.message);
+        fetchStatus();
+      } else {
+        alert('Error: ' + res.message);
+        btn.html(originalText).prop('disabled', false);
+      }
+    }).fail(function() {
+      alert('Terjadi kesalahan saat mengunduh.');
+      btn.html(originalText).prop('disabled', false);
+    });
+  }
+
+  function toggleLog() {
+    const panel = $('#logPanel');
+    if (panel.is(':hidden')) {
+      panel.show();
+      fetchLog();
+    } else {
+      panel.hide();
+    }
+  }
+
+  function fetchLog() {
+    $.get('/api/cloudflare/logs', function(data) {
+      if (data.logs && data.logs.length > 0) {
+        $('#logOutput').text(data.logs.join('\n'));
+        // auto-scroll to bottom
+        const pre = document.getElementById('logOutput');
+        pre.scrollTop = pre.scrollHeight;
+      } else {
+        $('#logOutput').text('Belum ada log output dari cloudflare...');
+      }
+    });
+  }
+
+  $(document).ready(function() {
+    fetchStatus();
+    // Poll status every 10 seconds
+    setInterval(fetchStatus, 10000);
+  });
+</script>
+{% endblock %}

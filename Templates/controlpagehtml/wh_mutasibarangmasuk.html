@@ -1,0 +1,638 @@
+{% extends 'base/base.html' %}
+{% block title %}{{ titlePage }}{% endblock %}
+{% block head %}
+{{ super() }}
+<!-- CSS khusus halaman ini -->
+
+<!-- DataTables -->
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') }}">
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/datatables-responsive/css/responsive.bootstrap4.min.css') }}">
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/datatables-buttons/css/buttons.bootstrap4.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='adminlte/adminlte.min.css') }}">
+<!-- Load Bootstrap CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/1.5.6/css/buttons.dataTables.min.css">
+<!-- Datetimepicker -->
+<link rel="stylesheet"
+  href="{{ url_for('static', filename='plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css') }}">
+<!-- Custome CSS Datatable-->
+<style>
+  #example1 td:nth-child(0),
+  #example1 td:nth-child(1),
+  #example1 td:nth-child(2),
+  #example1 td:nth-child(3) {
+    white-space: nowrap;
+  }
+
+  .modal-dialog.custom {
+    max-width: 1900px;
+  }
+
+  .modal-body {
+    max-width: 1900px;
+    overflow-x: auto;
+  }
+
+  /* Datepicker Styling */
+  .dark-mode .datepicker-input-custom {
+    background-color: #3f474e !important;
+    color: #ffffff !important;
+    border: 1px solid #6c757d !important;
+  }
+
+  .datepicker-input-custom {
+    cursor: pointer;
+    background-color: #fff !important;
+  }
+
+  .bootstrap-datetimepicker-widget.dropdown-menu {
+    min-width: 300px !important;
+  }
+</style>
+
+{% endblock %}
+{% block content %}
+<!--  ------------ ------------ ------------Isi content halaman ini------------ ------------ ------------ -->
+
+<div class="content-wrapper">
+  <!-- Content Header (Page header) -->
+  <section class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-left">
+            <li class="breadcrumb-item"><a href="#">DEPARTEMEN WAREHOUSE</a></li>
+            <li class="breadcrumb-item active">Mutasi Barang Masuk</li>
+          </ol>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-right">
+            <li><a href="#"> Automatic Log out :&nbsp;</a></li>
+            <li><span id="timer">00:00:00</span></li>
+          </ol>
+        </div>
+      </div>
+    </div><!-- /.container-fluid -->
+  </section>
+
+  <!-- Main content -->
+  <section class="content">
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Data Mutasi Barang Masuk</h2>
+              <button type="button" class="btn btn-secondary float-right" data-toggle="modal"
+                data-target="#formModalInvoice">
+                Bulk Invoice </button>
+              <button type="button" class="btn btn-primary float-right" data-toggle="modal" data-target="#formModal"
+                style="margin-right: 20px;">
+                Tambah Data Manual</button>
+              <button type="button" class="btn btn-primary float-right" data-toggle="modal"
+                data-target="#formModaltarikreceive" style="margin-right: 20px;">
+                Tarik Data Receive
+              </button>
+              <button type="button" class="btn btn-info float-right" data-toggle="modal" data-target="#formModalAdjust"
+                style="margin-right: 20px;">
+                Adjust Data
+              </button>
+              <button type="button" id="btnRefresh" class="btn btn-success float-right" style="margin-right: 20px;">
+                Refresh
+              </button>
+              <!-- <button type="button" onclick="showAlert()" class="btn btn-primary">Tampilkan Alert</button> -->
+
+              <button type="text" id="btnMasihDipinjam" class="btn float-right"
+                style="margin-right: 60px; cursor: default; background-color: #dd9295; display: none;">
+                Masih Dipinjam
+              </button>
+
+            </div>
+            <!-- /.card-header -->
+            <div class="card-body">
+              <div class="row">
+                <div class="col-2">
+                  <label>Tanggal Awal</label>
+                  <div class="input-group date" id="tanggalAwalDiv" data-target-input="nearest">
+                    <input type="text" id="tanggalAwal"
+                      class="form-control datetimepicker-input datepicker-input-custom" data-target="#tanggalAwalDiv"
+                      autocomplete="off" placeholder="Pilih Tanggal Awal" data-toggle="datetimepicker" />
+                  </div>
+                </div>
+                <div class="col-2">
+                  <label>Tanggal Akhir</label>
+                  <div class="input-group date" id="tanggalAkhirDiv" data-target-input="nearest">
+                    <input type="text" id="tanggalAkhir"
+                      class="form-control datetimepicker-input datepicker-input-custom" data-target="#tanggalAkhirDiv"
+                      autocomplete="off" placeholder="Pilih Tanggal Akhir" data-toggle="datetimepicker" />
+                  </div>
+                </div>
+                <div class="col-8 text-right" style="margin-top: 30px;">
+                  <!-- Tombol Download Excel -->
+                  <button onclick="downloadExcel1()" class="btn btn-success float-right">Download Excel</button>
+                </div>
+              </div>
+              <br>
+
+              <table id="example1" class="table table-bordered dt-responsive" style="width:100%">
+                <thead>
+                  <tr>
+                    <th style="text-align: center; vertical-align: middle;">ID</th>
+                    <th style="text-align: center; vertical-align: middle;">TGL MASUK BARANG</th>
+                    <th style="text-align: center; vertical-align: middle;">KODE BARANG</th>
+                    <th style="text-align: center; vertical-align: middle;">NAMA BARANG IND</th>
+                    <th style="text-align: center; vertical-align: middle;">NO. BON</th>
+                    <th style="text-align: center; vertical-align: middle;">QTY IN</th>
+                    <th style="text-align: center; vertical-align: middle;">SATUAN</th>
+                    <th style="text-align: center; vertical-align: middle;">SUPLIER</th>
+                    <th style="text-align: center; vertical-align: middle;">KATEGORI BARANG</th>
+                    <th style="width: 80px; text-align: center; vertical-align: middle;">AKSI</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Data rows will be inserted here by your code -->
+                </tbody>
+              </table>
+            </div>
+            <!-- /.card-body -->
+          </div>
+          <!-- /.card -->
+        </div>
+        <!-- /.col -->
+      </div>
+      <!-- /.row -->
+    </div>
+    <!-- /.container-fluid -->
+  </section>
+  <!-- /.content -->
+</div>
+<!-- /.content-wrapper -->
+
+<!-- Modal Denied Edit and Delete -->
+<div class="modal fade" id="deniedModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deniedModalLabel">Hapus Data</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Pesan akan diinput disini-->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Ok</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal Bulk Invoice-->
+<div class="modal fade" id="formModalInvoice" tabindex="-1" role="dialog" aria-labelledby="tambahModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered custom" role="document" style="max-width: 500px;">
+    <!-- Set max-width to your desired value -->
+    <div class="modal-content">
+      <div class="modal-header bg-secondary text-white">
+        <h5 class="modal-title">Buat Invoice Sekaligus</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <form id="form-invoiceKeluar-data" class="needs-validation" novalidate>
+        <div class="row mt-3 mb-3">
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="startDate" class="text-right">Start Date:</label>
+              <div class="input-group date" id="startDateDiv" data-target-input="nearest">
+                <input type="text" id="startDate" class="form-control datetimepicker-input datepicker-input-custom"
+                  data-target="#startDateDiv" autocomplete="off" placeholder="Start Date"
+                  data-toggle="datetimepicker" />
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="form-group">
+              <label for="endDate" class="text-left">End Date:</label>
+              <div class="input-group date" id="endDateDiv" data-target-input="nearest">
+                <input type="text" id="endDate" class="form-control datetimepicker-input datepicker-input-custom"
+                  data-target="#endDateDiv" autocomplete="off" placeholder="End Date" data-toggle="datetimepicker" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="text-center mb-3">
+          <button type="submit" class="btn btn-secondary">Proses</button>
+          <br>
+          <div id="loading-indicator" class="d-none" style="margin-top: 10px;">
+            <div class="spinner-border text-primary" role="status">
+              <span class="sr-only">Loading...</span>
+            </div>
+          </div>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal Tambah-->
+<div class="modal fade" id="formModal" tabindex="-1" role="dialog" aria-labelledby="tambahModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered custom" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="tambahModalLabel">Form Input Data Masuk</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <form id="form-tambah-data" class="needs-validation" novalidate>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-2">
+              <div class="form-group">
+                <label>Tanggal Input Barang :</label>
+                <div class="input-group date" id="tanggalinputbarangTambahDiv" data-target-input="nearest">
+                  <input type="text" class="form-control datetimepicker-input datepicker-input-custom"
+                    id="tanggalinputbarangTambah" name="tanggalinputbarangTambah"
+                    data-target="#tanggalinputbarangTambahDiv" autocomplete="off" placeholder="Pilih Tanggal Input"
+                    data-toggle="datetimepicker" />
+                </div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="form-group">
+                <label>Tanggal Masuk Barang :</label>
+                <div class="input-group date" id="tanggalmasukbarangTambahDiv" data-target-input="nearest">
+                  <input type="text" class="form-control datetimepicker-input datepicker-input-custom"
+                    id="tanggalmasukbarangTambah" name="tanggalmasukbarangTambah"
+                    data-target="#tanggalmasukbarangTambahDiv" autocomplete="off" placeholder="Pilih Tanggal Masuk"
+                    data-toggle="datetimepicker" />
+                </div>
+              </div>
+            </div>
+            <div class="col-md-2"></div>
+            <div class="row align-items-center">
+              <div class="form-group">
+                <label for="jenisbarangtambahMasuk">Jenis Barang :</label>
+                <select id="jenisbarangtambahMasuk" name="jenisbarangtambahMasuk" class="form-control">
+                  <option value="LOKAL">LOKAL</option>
+                  <option value="IMPOR">IMPOR</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-2"></div>
+            <div class="row align-items-center">
+              <div class="col d-flex justify-content-start">
+                <div class="form-group">
+                  <label for="depannomorBon">Nomor Bon</label>
+                  <input type="text" class="form-control col-12 " id="depannomorBon" style="text-align: right;"
+                    placeholder="" required>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col d-flex justify-content-start">
+                <div class="form-group">
+                  <label for="nomorBon">:</label>
+                  <input type="text" class="form-control col-6" id="nomorBon" data-inputmask="'mask': '9999/9999'"
+                    required autocomplete="off" placeholder="0000">
+                </div>
+              </div>
+            </div>
+            <div class="col"></div>
+          </div>
+
+
+          <div id="itemContainer2">
+
+          </div>
+          <!-- Tombol Tambah Item  -->
+          <div class="col-md-12 mt-5">
+            <button type="button" id="tambahItemBtn" class="btn btn-primary">Tambah Item</button>
+            <button type="button" id="hapusItemBtn" class="btn btn-warning">Hapus Semua</button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fab fa-telegram"></i> Submit
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal Tarik Data Dari Receive -->
+<div class="modal fade" id="formModaltarikreceive" tabindex="-1" role="dialog" aria-labelledby="tambahModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered custom" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="tambahModalLabel">Form Tarik Data Masuk Dari Receiving (Masih dalam pengembangan)
+        </h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <form id="form-tambah-data" class="needs-validation" novalidate>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-2">
+              <div class="form-group">
+                <label>Tanggal Input Barang :</label>
+                <div class="input-group date" id="tanggalinputbarangTambahDiv" data-target-input="nearest">
+                  <input type="text" class="form-control datetimepicker-input datepicker-input-custom"
+                    id="tanggalinputbarangTambah" name="tanggalinputbarangTambah"
+                    data-target="#tanggalinputbarangTambahDiv" autocomplete="off" placeholder="Pilih Tanggal Input"
+                    data-toggle="datetimepicker" />
+                </div>
+              </div>
+            </div>
+            <div class="col-md-2">
+              <div class="form-group">
+                <label>Tanggal Masuk Barang :</label>
+                <div class="input-group date" id="tanggalmasukbarangTambahDiv" data-target-input="nearest">
+                  <input type="text" class="form-control datetimepicker-input datepicker-input-custom"
+                    id="tanggalmasukbarangTambah" name="tanggalmasukbarangTambah"
+                    data-target="#tanggalmasukbarangTambahDiv" autocomplete="off" placeholder="Pilih Tanggal Masuk"
+                    data-toggle="datetimepicker" />
+                </div>
+              </div>
+            </div>
+            <div class="col">
+              <div class="form-group">
+                <label for="depannomorBon">Nomor Bon</label>
+                <input type="text" class="form-control col-12" id="nomorBon" data-inputmask="'mask': '9999/9999'"
+                  required autocomplete="off">
+              </div>
+            </div>
+            <div class="col">
+              <label for="">&nbsp;</label>
+              <button type="button" class="btn btn-success float-sm-left" style="margin-top: 30px;">
+                Load data
+              </button>
+            </div>
+          </div>
+
+          <div id="itemContainer2">
+
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fab fa-telegram"></i> Submit Data
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal Adjust-->
+<div class="modal fade" id="formModalAdjust" tabindex="-1" role="dialog" aria-labelledby="tambahModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered custom" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="adjustModalLabel">Form Input Data Adjustment</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <form id="form-adjust-data" class="needs-validation" novalidate>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-2">
+              <div class="form-group">
+                <label>Tanggal Adjustment :</label>
+                <div class="input-group date" id="tanggalmasukbarangAdjustDiv" data-target-input="nearest">
+                  <input type="text" class="form-control datetimepicker-input datepicker-input-custom"
+                    id="tanggalmasukbarangAdjust" name="tanggalmasukbarangAdjust"
+                    data-target="#tanggalmasukbarangAdjustDiv" autocomplete="off" placeholder="Pilih Tanggal Adjust"
+                    data-toggle="datetimepicker" />
+                </div>
+              </div>
+            </div>
+            <div class="col-md-2"></div>
+            <div class="col-md-2"></div>
+            <div class="row align-items-center">
+              <div class="col d-flex justify-content-start">
+                <div class="form-group">
+                  <label for="depannomorbonAdjust">Nomor Referensi</label>
+                  <input type="text" class="form-control col-12 " id="depannomorbonAdjust" style="text-align: left;"
+                    placeholder="" required>
+                </div>
+              </div>
+            </div>
+
+            <div class="col"></div>
+          </div>
+
+
+          <div id="containerfluid" class="container-fluid">
+            <!-- <div id="itemContainer1" class="scrolling-wrapper row flex-row flex-nowrap mt-4 pb-4 pt-2" style="overflow: auto; display: flex;">
+               Elemen HTML untuk item pertama 
+              <div class="col-3 item-row">
+                <label>Kode Barang1 :</label>
+                <input type="text" class="form-control kodebarangAdj" name="kodebarangAdj-1" placeholder="Masukkan kode barang" required autocomplete="off">
+              </div>
+    
+              <div class="col-4 item-row">
+                <label>Nama Barang IDN :</label>
+                <input type="text" class="form-control namabarangAdj" name="namabarangAdj-1" placeholder="" required disabled>
+              </div>
+    
+              <div class="col-2 item-row">
+                <label>Saldo :</label>
+                <input type="text" class="form-control saldoAdj" name="saldoAdj-1" placeholder="" required autocomplete="off" disabled>
+              </div>
+    
+              <div class="col-2 item-row">
+                <label>QTY Adj:</label>
+                <input type="text" class="form-control qtyInAdj" name="qtyInAdj-1" placeholder="" required autocomplete="off">
+              </div>
+    
+              <div class="col-1 item-row">
+                <label>Satuan :</label>
+                <input type="text" class="form-control satuan" name="satuan-1" placeholder="" required disabled>
+              </div>
+    
+              <div class="col-2 item-row">
+                <label>Saldo Hasil Adj :</label>
+                <input type="text" class="form-control saldoakhirAdj" name="saldoakhirAdj-1" placeholder=""required autocomplete="off" disabled>
+              </div>
+              <div class="col-2 item-row">
+                <label>Kategori Barang :</label>
+                <input type="text" class="form-control kategoribarangAdj" name="kategoribarangAdj-1" placeholder="" required disabled>
+              </div>
+            </div>
+        
+             Elemen HTML untuk item kedua 
+            <div id="itemContainer2" class="scrolling-wrapper row flex-row flex-nowrap mt-4 pb-4 pt-2" style="overflow: auto; display: flex;">
+              <div class="col-3 item-row">
+                <label>Kode Barang2 :</label>
+                <input type="text" class="form-control kodebarangAdj" name="kodebarangAdj-2" placeholder="Masukkan kode barang" required autocomplete="off">
+              </div>
+        
+              <div class="col-4 item-row">
+                <label>Nama Barang IDN :</label>
+                <input type="text" class="form-control namabarangAdj" name="namabarangAdj-2" placeholder="" required disabled>
+              </div>
+        
+              <div class="col-2 item-row">
+                <label>Saldo :</label>
+                <input type="text" class="form-control saldoAdj" name="saldoAdj-2" placeholder="" required autocomplete="off" disabled>
+              </div>
+        
+              <div class="col-2 item-row">
+                <label>QTY Adj:</label>
+                <input type="text" class="form-control qtyInAdj" name="qtyInAdj-2" placeholder="" required autocomplete="off">
+              </div>
+        
+              <div class="col-1 item-row">
+                <label>Satuan :</label>
+                <input type="text" class="form-control satuan" name="satuan-2" placeholder="" required disabled>
+              </div>
+        
+              <div class="col-2 item-row">
+                <label>Saldo Hasil Adj :</label>
+                <input type="text" class="form-control saldoakhirAdj" name="saldoakhirAdj-2" placeholder="" required autocomplete="off" disabled>
+              </div>
+        
+              <div class="col-2 item-row">
+                <label>Kategori Barang :</label>
+                <input type="text" class="form-control kategoribarangAdj" name="kategoribarangAdj-2" placeholder="" required disabled>
+              </div>
+            </div> -->
+          </div>
+
+
+          <!-- Tombol Adjust Item -->
+          <div class="col-md-12 mt-5">
+            <button type="button" id="tambahItemBtnAdjust" class="btn btn-primary">Tambah Item</button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fab fa-telegram"></i> Submit Data
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal Delete -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteModalLabel">Hapus Data</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <!-- Pesan akan diinput disini-->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+        <button type="button" class="btn btn-danger btn-confirm-delete">Hapus</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+
+<!-- Modal History -->
+<div class="modal fade" id="historyModal" tabindex="-1" role="dialog" aria-labelledby="historyModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered custom" role="document">
+    <div class="modal-content">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title" id="historyModalLabel"><i class="fas fa-history mr-2"></i>Riwayat Audit Bon</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true" class="text-white">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body p-0">
+        <div class="table-responsive">
+          <table class="table table-sm table-striped table-bordered mb-0" style="width: 100%;">
+            <thead class="bg-light">
+              <tr>
+                <th style="width: 25%;">Waktu</th>
+                <th style="width: 15%;">Aksi</th>
+                <th style="width: 20%;">User</th>
+                <th style="width: 40%;">Detail Perubahan</th>
+              </tr>
+            </thead>
+            <tbody id="history-tbody">
+              <!-- Content loaded via AJAX -->
+            </tbody>
+          </table>
+          <div id="history-loading" class="text-center py-4 d-none">
+            <div class="spinner-border text-info" role="status">
+              <span class="sr-only">Loading...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block scripts %}
+{{ super() }}
+<!-- All JavaScript khusus halaman ini -->
+<!-- Bootstrap 4 -->
+<script src="{{ url_for('static', filename='plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+<!-- DataTables  & Plugins -->
+<script src="{{ url_for('static', filename='plugins/datatables/jquery.dataTables.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
+<script
+  src="{{ url_for('static', filename='plugins/datatables-responsive/js/dataTables.responsive.min.js') }}"></script>
+<script
+  src="{{ url_for('static', filename='plugins/datatables-responsive/js/responsive.bootstrap4.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-buttons/js/dataTables.buttons.min.js') }}"></script>
+<script src="https://cdn.datatables.net/buttons/1.5.6/js/buttons.flash.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.5.6/js/dataTables.buttons.min.js"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.bootstrap4.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/jszip/jszip.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/pdfmake/pdfmake.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/pdfmake/vfs_fonts.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.html5.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.print.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-buttons/js/buttons.colVis.min.js') }}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+<!-- Date-range-picker -->
+<script src="{{ url_for('static', filename='plugins/moment/moment.min.js') }}"></script>
+<script
+  src="{{ url_for('static', filename='plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js') }}"></script>
+<!-- Control Full Page Khusus Permintaan IT-->
+
+<script src="{{ url_for('send_js', path='wh_mutasibarangmasuk.js') }}"></script>
+
+{% endblock %}

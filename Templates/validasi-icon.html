@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Form Email</title>
+	<!-- Load Bootstrap CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+	<style>
+		.valid-feedback:after {
+			content: "\2714";
+			color: green;
+			margin-left: 5px;
+		}
+
+		.invalid-feedback:after {
+			content: "\2718";
+			color: red;
+			margin-left: 5px;
+		}
+	</style>
+</head>
+<body>
+
+	<div class="container">
+		<h1>Form Email</h1>
+		<form id="email-form" method="POST">
+			<div class="form-group">
+				<label for="email">Email:</label>
+				<div class="input-group">
+					<input type="email" class="form-control" id="email" name="email" placeholder="Masukkan email Anda" required>
+				</div>
+				<div class="invalid-feedback">
+					Mohon isi email yang valid.
+				</div>
+				<div class="valid-feedback">
+					Terima kasih!
+				</div>
+			</div>
+			<button type="submit" class="btn btn-primary">Submit</button>
+		</form>
+	</div>
+
+	<!-- Load Bootstrap JS and jQuery -->
+	<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+
+	<!-- Validate form using Bootstrap -->
+    <script>
+        // Get the form.
+        var form = $('#email-form');
+    
+        // Get the inputs.
+        var email = form.find('#email');
+    
+        // Add event listeners.
+        email.on('input', validateEmail);
+    
+        // Validate email input.
+        function validateEmail() {
+            if (email[0].checkValidity()) {
+                email.removeClass('is-invalid');
+                email.addClass('is-valid');
+                $(".invalid-feedback").hide();
+                $(".valid-feedback").show();
+                $(".fa-times").hide();
+                $(".fa-check").show();
+            } else {
+                email.removeClass('is-valid');
+                email.addClass('is-invalid');
+                $(".invalid-feedback").show();
+                $(".valid-feedback").hide();
+                $(".fa-times").show();
+                $(".fa-check").hide();
+            }
+        }
+    
+        // Submit the form.
+        form.on('submit', function(event) {
+            event.preventDefault();
+    
+            if (email[0].checkValidity()) {
+                form[0].submit();
+            } else {
+                email.focus();
+                validateEmail();
+            }
+        });
+    </script>
+    
+</body>
+</html>

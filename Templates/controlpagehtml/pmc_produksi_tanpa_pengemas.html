@@ -1,0 +1,590 @@
+{% extends 'base/base.html' %}
+{% block title %}{{ titlePage }}{% endblock %}
+{% block head %}
+{{ super() }}
+<!-- DataTables -->
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/datatables-bs4/css/dataTables.bootstrap4.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/datatables-responsive/css/responsive.bootstrap4.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/datatables-buttons/css/buttons.bootstrap4.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='adminlte/adminlte.min.css') }}">
+<!-- Select2 -->
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/select2/css/select2.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css') }}">
+<!-- Datetimepicker -->
+<link rel="stylesheet" href="{{ url_for('static', filename='plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css') }}">
+
+<style>
+  .badge-code {
+    font-family: 'Consolas', monospace;
+    font-weight: 600;
+    font-size: 0.85rem;
+  }
+  .nav-tabs .nav-link {
+    font-weight: 600;
+    color: #495057;
+  }
+  .nav-tabs .nav-link.active {
+    color: #007bff;
+    font-weight: bold;
+    border-top: 3px solid #007bff;
+  }
+  .table th {
+    vertical-align: middle !important;
+    text-align: center;
+  }
+  .table td {
+    vertical-align: middle !important;
+  }
+
+  /* Datepicker popup fix */
+  .datepicker-input-custom {
+    cursor: pointer;
+  }
+  .bootstrap-datetimepicker-widget.dropdown-menu {
+    min-width: 300px !important;
+    z-index: 1050 !important;
+  }
+
+  /* Select2 Container & Dropdown Alignment Fix */
+  .select2-container {
+    width: 100% !important;
+  }
+  .select2-container--bootstrap4 .select2-selection--single {
+    height: calc(2.25rem + 2px) !important;
+  }
+  .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered {
+    line-height: calc(2.25rem + 2px) !important;
+    padding-left: 0.75rem !important;
+  }
+
+  /* ===== DARK MODE SUPPORT ===== */
+  .dark-mode .card {
+    background-color: #343a40;
+    color: #fff;
+  }
+  .dark-mode .form-control {
+    background-color: #3f474e !important;
+    color: #ffffff !important;
+    border-color: #6c757d !important;
+  }
+  .dark-mode .form-control:focus {
+    background-color: #454d55 !important;
+    color: #ffffff !important;
+    border-color: #80bdff !important;
+  }
+  .dark-mode .input-group-text {
+    background-color: #454d55 !important;
+    color: #ffffff !important;
+    border-color: #6c757d !important;
+  }
+  .dark-mode .datetimepicker-input,
+  .dark-mode .datepicker-input-custom {
+    background-color: #3f474e !important;
+    color: #ffffff !important;
+    border-color: #6c757d !important;
+  }
+
+  /* Select2 in Dark Mode */
+  .dark-mode .select2-container--bootstrap4 .select2-selection--single {
+    background-color: #3f474e !important;
+    border-color: #6c757d !important;
+    color: #ffffff !important;
+  }
+  .dark-mode .select2-container--bootstrap4 .select2-selection--single .select2-selection__rendered {
+    color: #ffffff !important;
+  }
+  .dark-mode .select2-container--bootstrap4 .select2-selection--single .select2-selection__placeholder {
+    color: #adb5bd !important;
+  }
+  .dark-mode .select2-dropdown {
+    background-color: #343a40 !important;
+    border-color: #6c757d !important;
+    color: #ffffff !important;
+    z-index: 1051 !important;
+  }
+  .dark-mode .select2-container--bootstrap4 .select2-search--dropdown .select2-search__field {
+    background-color: #3f474e !important;
+    color: #ffffff !important;
+    border-color: #6c757d !important;
+  }
+  .dark-mode .select2-container--bootstrap4 .select2-results__option {
+    color: #e9ecef !important;
+  }
+  .dark-mode .select2-container--bootstrap4 .select2-results__option--highlighted {
+    background-color: #007bff !important;
+    color: #ffffff !important;
+  }
+  .dark-mode .select2-container--bootstrap4 .select2-results__option[aria-selected="true"] {
+    background-color: #495057 !important;
+  }
+
+  /* Datetimepicker in Dark Mode */
+  .dark-mode .bootstrap-datetimepicker-widget {
+    background-color: #343a40 !important;
+    color: #ffffff !important;
+    border: 1px solid #6c757d !important;
+  }
+  .dark-mode .bootstrap-datetimepicker-widget table th,
+  .dark-mode .bootstrap-datetimepicker-widget table td {
+    color: #ffffff !important;
+  }
+  .dark-mode .bootstrap-datetimepicker-widget table td.day:hover,
+  .dark-mode .bootstrap-datetimepicker-widget table td.hour:hover,
+  .dark-mode .bootstrap-datetimepicker-widget table td.minute:hover {
+    background-color: #495057 !important;
+  }
+  .dark-mode .bootstrap-datetimepicker-widget table td.active,
+  .dark-mode .bootstrap-datetimepicker-widget table td.active:hover {
+    background-color: #007bff !important;
+    color: #ffffff !important;
+  }
+  .dark-mode .bootstrap-datetimepicker-widget table td.today:before {
+    border-bottom-color: #007bff !important;
+  }
+  .dark-mode .nav-tabs .nav-link {
+    color: #ced4da;
+  }
+  .dark-mode .nav-tabs .nav-link.active {
+    color: #3f9eff;
+    background-color: #343a40;
+    border-color: #6c757d #6c757d #343a40;
+    border-top: 3px solid #3f9eff;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+  <!-- Content Header -->
+  <section class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-left">
+            <li class="breadcrumb-item"><a href="#">DEPARTEMEN PMC</a></li>
+            <li class="breadcrumb-item active">Produksi Tanpa Pengemas</li>
+          </ol>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-right">
+            <li><a href="#"> Automatic Log out :&nbsp;</a></li>
+            <li><span id="timer">00:00:00</span></li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main content -->
+  <section class="content">
+    <div class="container-fluid">
+
+      <!-- Filter Card -->
+      <div class="card card-primary card-outline">
+        <div class="card-header">
+          <h3 class="card-title"><i class="fas fa-filter mr-1"></i> Filter & Parameter Pencarian</h3>
+          <div class="card-tools">
+            <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3">
+              <div class="form-group position-relative" id="kategoriGroup">
+                <label>Filter Kategori:</label>
+                <select class="form-control select2" id="filterKategori" style="width: 100%;">
+                  <option value="">-- Semua Kategori --</option>
+                  {% for cat in category_list %}
+                  <option value="{{ cat.id_kategori }}">{{ cat.nama_kategori }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group position-relative" id="productGroup">
+                <label>Pilih Produk (Result):</label>
+                <select class="form-control select2" id="filterProduk" style="width: 100%;">
+                  <option value="">-- Semua Produk Hasil --</option>
+                  {% for prod in product_list %}
+                  <option value="{{ prod.kode_barang }}">{{ prod.kode_barang }} - {{ prod.nama_barang }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label>Tanggal Produksi Awal:</label>
+                <div class="input-group date" id="startDateDiv" data-target-input="nearest">
+                  <input type="text" class="form-control datetimepicker-input datepicker-input-custom" id="startDate" data-target="#startDateDiv" placeholder="DD-MM-YYYY" data-toggle="datetimepicker" autocomplete="off" readonly>
+                  <div class="input-group-append" data-target="#startDateDiv" data-toggle="datetimepicker">
+                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label>Tanggal Produksi Akhir:</label>
+                <div class="input-group date" id="endDateDiv" data-target-input="nearest">
+                  <input type="text" class="form-control datetimepicker-input datepicker-input-custom" id="endDate" data-target="#endDateDiv" placeholder="DD-MM-YYYY" data-toggle="datetimepicker" autocomplete="off" readonly>
+                  <div class="input-group-append" data-target="#endDateDiv" data-toggle="datetimepicker">
+                    <div class="input-group-text"><i class="fa fa-calendar"></i></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Content Card with Tabs -->
+      <div class="card card-primary card-outline card-outline-tabs">
+        <div class="card-header p-0 border-bottom-0">
+          <ul class="nav nav-tabs" id="custom-tabs-four-tab" role="tablist">
+            <li class="nav-item">
+              <a class="nav-link active" id="tab-summary-link" data-toggle="pill" href="#tab-summary" role="tab"><i class="fas fa-table mr-1"></i> Rekapitulasi Hasil Produksi</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="tab-detail-link" data-toggle="pill" href="#tab-detail" role="tab"><i class="fas fa-list mr-1"></i> Detail Riwayat Transaksi</a>
+            </li>
+            <li class="nav-item ml-auto p-2">
+              <button class="btn btn-sm btn-success" id="btnExportExcel"><i class="fas fa-file-excel mr-1"></i> Export Excel</button>
+            </li>
+          </ul>
+        </div>
+        <div class="card-body">
+          <div class="tab-content" id="custom-tabs-four-tabContent">
+            <!-- TAB 1: SUMMARY -->
+            <div class="tab-pane fade show active" id="tab-summary" role="tabpanel">
+              <table id="tableSummary" class="table table-bordered table-striped table-hover w-100">
+                <thead class="thead-dark">
+                  <tr>
+                    <th style="width: 30px;">No</th>
+                    <th>Kode Produk (Result)</th>
+                    <th>Nama Produk / Barang Jadi</th>
+                    <th>Kode Eksternal</th>
+                    <th>Kategori</th>
+                    <th>Total Transaksi</th>
+                    <th>Total Qty Result</th>
+                    <th>Satuan</th>
+                    <th>Tgl Awal</th>
+                    <th>Tgl Akhir</th>
+                    <th style="width: 50px;">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+
+            <!-- TAB 2: DETAIL -->
+            <div class="tab-pane fade" id="tab-detail" role="tabpanel">
+              <table id="tableDetail" class="table table-bordered table-striped table-hover w-100">
+                <thead class="thead-dark">
+                  <tr>
+                    <th style="width: 30px;">No</th>
+                    <th>No Dokumen Produksi</th>
+                    <th>Tgl Produksi</th>
+                    <th>Kode Produk Result</th>
+                    <th>Nama Produk Result</th>
+                    <th>External Code</th>
+                    <th>Kategori</th>
+                    <th>Qty Result</th>
+                    <th>Daftar Material Dikonsumsi</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<!-- Bootstrap 4 -->
+<script src="{{ url_for('static', filename='plugins/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+<!-- DataTables & Plugins -->
+<script src="{{ url_for('static', filename='plugins/datatables/jquery.dataTables.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-bs4/js/dataTables.bootstrap4.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-responsive/js/dataTables.responsive.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/datatables-responsive/js/responsive.bootstrap4.min.js') }}"></script>
+<!-- Select2 -->
+<script src="{{ url_for('static', filename='plugins/select2/js/select2.full.min.js') }}"></script>
+<!-- Datetimepicker -->
+<script src="{{ url_for('static', filename='plugins/moment/moment.min.js') }}"></script>
+<script src="{{ url_for('static', filename='plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js') }}"></script>
+
+<script>
+$(document).ready(function() {
+    $('#filterKategori').select2({
+        theme: 'bootstrap4',
+        placeholder: "-- Semua Kategori --",
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('#kategoriGroup')
+    });
+
+    $('#filterProduk').select2({
+        theme: 'bootstrap4',
+        placeholder: "-- Semua Produk Hasil --",
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('#productGroup')
+    });
+
+    // Inisialisasi default tanggal awal (awal bulan) & tanggal akhir (akhir bulan)
+    const defaultStart = moment().startOf('month').format('YYYY-MM-DD');
+    const defaultEnd = moment().endOf('month').format('YYYY-MM-DD');
+
+    $('#startDate').val(defaultStart);
+    $('#endDate').val(defaultEnd);
+
+    $('#startDateDiv').datetimepicker({
+        format: 'YYYY-MM-DD',
+        defaultDate: defaultStart,
+        useCurrent: false,
+        icons: {
+            time: 'fa fa-clock',
+            date: 'fa fa-calendar',
+            up: 'fa fa-chevron-up',
+            down: 'fa fa-chevron-down',
+            previous: 'fa fa-chevron-left',
+            next: 'fa fa-chevron-right',
+            today: 'fa fa-calendar-check',
+            clear: 'fa fa-trash',
+            close: 'fa fa-times'
+        }
+    });
+
+    $('#endDateDiv').datetimepicker({
+        format: 'YYYY-MM-DD',
+        defaultDate: defaultEnd,
+        useCurrent: false,
+        icons: {
+            time: 'fa fa-clock',
+            date: 'fa fa-calendar',
+            up: 'fa fa-chevron-up',
+            down: 'fa fa-chevron-down',
+            previous: 'fa fa-chevron-left',
+            next: 'fa fa-chevron-right',
+            today: 'fa fa-calendar-check',
+            clear: 'fa fa-trash',
+            close: 'fa fa-times'
+        }
+    });
+
+    // Inisialisasi DataTable Summary
+    var tableSummary = $('#tableSummary').DataTable({
+        responsive: true,
+        autoWidth: false,
+        ajax: {
+            url: '/api/pmc/dataproduksitanpapengemas',
+            type: 'GET',
+            data: function(d) {
+                d.kode_produk = $('#filterProduk').val();
+                d.id_kategori = $('#filterKategori').val();
+                d.startDate = $('#startDate').val();
+                d.endDate = $('#endDate').val();
+            },
+            dataSrc: ''
+        },
+        columns: [
+            {
+                data: null,
+                className: 'text-center',
+                render: function(data, type, row, meta) { return meta.row + 1; }
+            },
+            {
+                data: 'result_kode',
+                render: function(data) { return '<span class="badge badge-success badge-code">' + data + '</span>'; }
+            },
+            { data: 'result_nama' },
+            {
+                data: 'result_ext_code',
+                render: function(data) {
+                    return data && data !== '-' ? '<strong>' + data + '</strong>' : '<span class="text-muted">-</span>';
+                }
+            },
+            {
+                data: 'kategori_barang',
+                className: 'text-center',
+                render: function(data) {
+                    var badgeClass = 'badge-secondary';
+                    if (data === 'WIP') badgeClass = 'badge-warning';
+                    else if (data === 'Barang Jadi' || data === 'FG') badgeClass = 'badge-success';
+                    return '<span class="badge ' + badgeClass + '">' + data + '</span>';
+                }
+            },
+            {
+                data: 'total_transaksi',
+                className: 'text-center',
+                render: function(data) { return '<span class="badge badge-info">' + data + 'x</span>'; }
+            },
+            {
+                data: 'total_qty_result',
+                className: 'text-right font-weight-bold text-success',
+                render: function(data, type, row) { 
+                    return Number(data).toLocaleString('id-ID') + ' <small class="text-muted font-weight-normal">' + (row.satuan_result || '') + '</small>'; 
+                }
+            },
+            { data: 'satuan_result', className: 'text-center' },
+            { data: 'tgl_awal_str', className: 'text-center' },
+            { data: 'tgl_akhir_str', className: 'text-center' },
+            {
+                data: null,
+                className: 'text-center',
+                orderable: false,
+                render: function(data, type, row) {
+                    return '<button class="btn btn-xs btn-outline-primary btn-view-detail" data-kode="' + row.result_kode + '" title="Lihat Detail Transaksi"><i class="fas fa-eye"></i></button>';
+                }
+            }
+        ],
+        order: [[5, 'desc']],
+        pageLength: 25,
+        language: {
+            search: "Cari data:",
+            lengthMenu: "Tampilkan _MENU_ baris",
+            zeroRecords: "Tidak ada data yang cocok",
+            info: "Menampilkan _START_ s/d _END_ dari _TOTAL_ data",
+            infoEmpty: "Menampilkan 0 data",
+            infoFiltered: "(disaring dari _MAX_ total data)"
+        }
+    });
+
+    // Inisialisasi DataTable Detail
+    var tableDetail = $('#tableDetail').DataTable({
+        responsive: true,
+        autoWidth: false,
+        ajax: {
+            url: '/api/pmc/dataproduksitanpapengemasdetail',
+            type: 'GET',
+            data: function(d) {
+                d.kode_produk = $('#filterProduk').val();
+                d.id_kategori = $('#filterKategori').val();
+                d.startDate = $('#startDate').val();
+                d.endDate = $('#endDate').val();
+            },
+            dataSrc: ''
+        },
+        columns: [
+            {
+                data: null,
+                className: 'text-center',
+                render: function(data, type, row, meta) { return meta.row + 1; }
+            },
+            {
+                data: 'kode_produksi',
+                render: function(data) { return '<span class="font-weight-bold text-primary">' + data + '</span>'; }
+            },
+            { data: 'tanggal_produksi_str', className: 'text-center' },
+            {
+                data: 'result_kode',
+                render: function(data) { return '<span class="badge badge-success badge-code">' + data + '</span>'; }
+            },
+            { data: 'result_nama' },
+            {
+                data: 'result_ext_code',
+                render: function(data) {
+                    return data && data !== '-' ? '<strong>' + data + '</strong>' : '<span class="text-muted">-</span>';
+                }
+            },
+            {
+                data: 'kategori_barang',
+                className: 'text-center',
+                render: function(data) {
+                    var badgeClass = 'badge-secondary';
+                    if (data === 'WIP') badgeClass = 'badge-warning';
+                    else if (data === 'Barang Jadi' || data === 'FG') badgeClass = 'badge-success';
+                    return '<span class="badge ' + badgeClass + '">' + data + '</span>';
+                }
+            },
+            {
+                data: 'qty_result',
+                className: 'text-right font-weight-bold text-success',
+                render: function(data, type, row) { 
+                    return Number(data).toLocaleString('id-ID') + ' <small class="text-muted font-weight-normal">' + (row.satuan_result || '') + '</small>'; 
+                }
+            },
+            {
+                data: 'daftar_material',
+                render: function(data) {
+                    if (!data || data === '-') return '<span class="text-muted">-</span>';
+                    var lines = data.split('\n');
+                    return '<div style="font-size: 0.85rem; line-height: 1.4;">' + 
+                        lines.map(function(line) {
+                            return '<div><i class="fas fa-layer-group text-primary mr-1" style="font-size:0.75rem;"></i>' + line + '</div>';
+                        }).join('') + '</div>';
+                }
+            }
+        ],
+        order: [[2, 'desc']],
+        pageLength: 25,
+        language: {
+            search: "Cari data:",
+            lengthMenu: "Tampilkan _MENU_ baris",
+            zeroRecords: "<div class='text-center p-3 text-muted'><i class='fas fa-info-circle fa-2x mb-2 d-block text-primary'></i>Tidak ada data transaksi produksi tanpa pengemas yang cocok.</div>",
+            info: "Menampilkan _START_ s/d _END_ dari _TOTAL_ data",
+            infoEmpty: "Menampilkan 0 data",
+            infoFiltered: "(disaring dari _MAX_ total data)"
+        }
+    });
+
+    // Sesuaikan lebar kolom DataTables saat tab dibuka & update URL hash
+    $('a[data-toggle="pill"], a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+        if (history.replaceState) {
+            history.replaceState(null, null, e.target.hash);
+        }
+        $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust().responsive.recalc();
+    });
+
+    // Otomatis buka tab jika ada hash di URL (misal #tab-detail)
+    var currentHash = window.location.hash;
+    if (currentHash && $('a[href="' + currentHash + '"]').length) {
+        $('a[href="' + currentHash + '"]').tab('show');
+    }
+
+    // Auto-reload data saat pilihan filter berubah
+    $('#filterKategori, #filterProduk').on('change', function() {
+        tableSummary.ajax.reload();
+        tableDetail.ajax.reload();
+    });
+
+    // Auto-reload data saat tanggal berubah
+    $('#startDateDiv, #endDateDiv').on('change.datetimepicker hide.datetimepicker', function() {
+        tableSummary.ajax.reload();
+        tableDetail.ajax.reload();
+    });
+
+    // Klik tombol mata pada baris rekapitulasi -> pindah ke tab detail dan otomatis filter produk tersebut
+    $(document).on('click', '.btn-view-detail', function(e) {
+        e.preventDefault();
+        var kode = $(this).data('kode');
+        if (kode) {
+            $('#filterProduk').val(kode).trigger('change');
+        }
+        $('#tab-detail-link').tab('show');
+    });
+
+    $('#btnExportExcel').on('click', function() {
+        var kodeProduk = $('#filterProduk').val() || '';
+        var idKategori = $('#filterKategori').val() || '';
+        var startDate = $('#startDate').val() || '';
+        var endDate = $('#endDate').val() || '';
+
+        var params = new URLSearchParams({
+            kode_produk: kodeProduk,
+            id_kategori: idKategori,
+            startDate: startDate,
+            endDate: endDate
+        });
+
+        window.location.href = '/api/pmc/exportproduksitanpapengemas?' + params.toString();
+    });
+});
+</script>
+{% endblock %}
