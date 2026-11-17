@@ -1,0 +1,518 @@
+{% extends "base/base.html" %}
+
+{% block title %}License & Security Management{% endblock %}
+
+{% block head %}
+{{ super() }}
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+<style>
+  .card-stat {
+    border-radius: 8px;
+    transition: transform 0.2s ease;
+  }
+  .card-stat:hover {
+    transform: translateY(-3px);
+  }
+  .preview-box {
+    background-color: #fff9e6;
+    border: 1px solid #ffeeba;
+    border-left: 5px solid #ffc107;
+    color: #856404;
+    padding: 14px 16px;
+    border-radius: 6px;
+    font-size: 14.5px;
+    font-weight: 500;
+    line-height: 1.5;
+    margin-top: 8px;
+  }
+  .key-badge {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 15px;
+    letter-spacing: 0.5px;
+  }
+  .custom-control-label {
+    cursor: pointer;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+  <!-- Content Header (Page header) -->
+  <section class="content-header">
+    <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-sm-left">
+            <li class="breadcrumb-item"><a href="/dashboard">Settings</a></li>
+            <li class="breadcrumb-item active">License & Security</li>
+          </ol>
+        </div>
+        <div class="col-sm-6">
+          <ol class="breadcrumb float-right">
+            <li><a href="#"> Automatic Log out :&nbsp;</a></li>
+            <li><span id="timer">00:00:00</span></li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main content -->
+  <section class="content">
+    <div class="container-fluid">
+      
+      <!-- Top Alert Banner -->
+      <div class="alert alert-dark shadow-sm" style="border-left: 5px solid #17a2b8; background-color: #2b3035; color: #fff;">
+        <div class="d-flex align-items-center">
+          <div class="mr-3">
+            <i class="fas fa-shield-alt fa-2x text-info"></i>
+          </div>
+          <div>
+            <h5 class="mb-1 font-weight-bold">Manajemen Lisensi & Kill-Switch Sistem (Master Admin: lutfi)</h5>
+            <span>Pengaturan ini mengontrol validasi akses login seluruh pengguna aplikasi. User <b>lutfi</b> memiliki hak <b>Master Bypass 100%</b> sehingga selalu dapat login ke sistem.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Status Cards -->
+      <div class="row">
+        <!-- 1. Status Proteksi -->
+        <div class="col-12 col-sm-6 col-md-3">
+          <div class="info-box shadow-sm card-stat">
+            <span class="info-box-icon bg-info elevation-1" id="statIconProtection"><i class="fas fa-power-off"></i></span>
+            <div class="info-box-content">
+              <span class="info-box-text">Proteksi Lisensi</span>
+              <span class="info-box-number" id="statProtectionText"><span class="badge badge-success">Memuat...</span></span>
+              <small class="text-muted" id="statProtectionSub">Pengecekan Kunci</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Sinkronisasi GitHub -->
+        <div class="col-12 col-sm-6 col-md-3">
+          <div class="info-box shadow-sm card-stat">
+            <span class="info-box-icon bg-primary elevation-1"><i class="fab fa-github"></i></span>
+            <div class="info-box-content">
+              <span class="info-box-text">Sumber Kunci (GitHub)</span>
+              <span class="info-box-number" id="statGitHubText"><span class="badge badge-info">Memuat...</span></span>
+              <small class="text-muted" id="statGitHubSub">Raw license.txt</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Masa Berlaku / Expiry -->
+        <div class="col-12 col-sm-6 col-md-3">
+          <div class="info-box shadow-sm card-stat">
+            <span class="info-box-icon bg-warning elevation-1"><i class="fas fa-calendar-alt text-white"></i></span>
+            <div class="info-box-content">
+              <span class="info-box-text">Masa Berlaku</span>
+              <span class="info-box-number" id="statExpiryText" style="font-size: 15px;">-</span>
+              <small class="text-muted" id="statExpirySub">Status Tanggal</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Master Admin Status -->
+        <div class="col-12 col-sm-6 col-md-3">
+          <div class="info-box shadow-sm card-stat">
+            <span class="info-box-icon bg-success elevation-1"><i class="fas fa-user-shield"></i></span>
+            <div class="info-box-content">
+              <span class="info-box-text">Master Admin</span>
+              <span class="info-box-number text-success font-weight-bold">lutfi</span>
+              <small class="text-success"><i class="fas fa-check-circle"></i> Bypass Otomatis 100%</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Form & Diagnostics Grid -->
+      <div class="row">
+        
+        <!-- Left: Form Pengaturan Lisensi -->
+        <div class="col-lg-7 col-md-12">
+          <div class="card card-primary card-outline shadow-sm">
+            <div class="card-header">
+              <h3 class="card-title font-weight-bold"><i class="fas fa-sliders-h mr-1 text-primary"></i> Pengaturan Proteksi & Kill-Switch</h3>
+            </div>
+            <div class="card-body">
+              <form id="licenseSettingsForm">
+                
+                <!-- Toggle Master Switch -->
+                <div class="form-group bg-light p-3 rounded border">
+                  <div class="custom-control custom-switch custom-switch-off-danger custom-switch-on-success">
+                    <input type="checkbox" class="custom-control-input" id="switchEnabled" checked>
+                    <label class="custom-control-label font-weight-bold" for="switchEnabled" id="labelSwitchEnabled">
+                      Proteksi Lisensi Aktif
+                    </label>
+                  </div>
+                  <small class="form-text text-muted mt-1">
+                    Jika saklar ini dinonaktifkan, seluruh pengguna dapat login langsung tanpa pengecekan kunci GitHub ataupun tanggal expired.
+                  </small>
+                </div>
+
+                <!-- Expire Date Settings -->
+                <div class="form-group bg-light p-3 rounded border mt-3">
+                  <div class="custom-control custom-checkbox mb-2">
+                    <input type="checkbox" class="custom-control-input" id="checkExpireEnabled">
+                    <label class="custom-control-label font-weight-bold" for="checkExpireEnabled">
+                      Batasi Akses Berdasarkan Tanggal (Auto-Block by Date)
+                    </label>
+                  </div>
+                  
+                  <div id="expireDateContainer" style="display: none;" class="mt-2">
+                    <label class="small font-weight-bold text-secondary">Tanggal Kadaluarsa / Expired:</label>
+                    <div class="input-group">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text"><i class="fas fa-calendar-day text-danger"></i></span>
+                      </div>
+                      <input type="date" class="form-control" id="inputExpireDate">
+                    </div>
+                    <small class="form-text text-muted">
+                      Aplikasi akan otomatis memblokir login user selain <code>lutfi</code> setelah melewati tanggal ini.
+                    </small>
+                  </div>
+                </div>
+
+                <!-- Custom Error Message -->
+                <div class="form-group mt-3">
+                  <label class="font-weight-bold"><i class="fas fa-comment-alt text-warning mr-1"></i> Pesan Error Login Kustom:</label>
+                  <textarea class="form-control" id="inputErrorMessage" rows="3" placeholder="Masukkan pesan error yang akan muncul di layar login..."></textarea>
+                  
+                  <!-- Quick Preset Buttons -->
+                  <div class="mt-2 d-flex flex-wrap align-items-center">
+                    <span class="small text-muted mr-2">Contoh Cepat:</span>
+                    <button type="button" class="btn btn-xs btn-outline-secondary mr-1 mb-1" onclick="setPresetMsg(1)">Default Lisensi Habis</button>
+                    <button type="button" class="btn btn-xs btn-outline-secondary mr-1 mb-1" onclick="setPresetMsg(2)">Pemeliharaan Sistem</button>
+                    <button type="button" class="btn btn-xs btn-outline-secondary mb-1" onclick="setPresetMsg(3)">Hubungi Lutfi</button>
+                  </div>
+
+                  <!-- Preview Box -->
+                  <div class="mt-2">
+                    <small class="font-weight-bold text-muted">Pratinjau Pesan yang Dilihat Pengguna saat Ditolak:</small>
+                    <div class="preview-box" id="errorPreview">
+                      <i class="fas fa-exclamation-triangle mr-1"></i> <span id="previewText">-</span>
+                    </div>
+                  </div>
+                </div>
+
+                <hr>
+
+                <!-- GitHub Raw URL & Expected Key -->
+                <div class="form-group">
+                  <label class="font-weight-bold"><i class="fab fa-github mr-1"></i> GitHub Raw URL (Sumber Lisensi):</label>
+                  <div class="input-group">
+                    <div class="input-group-prepend">
+                      <span class="input-group-text"><i class="fas fa-link"></i></span>
+                    </div>
+                    <input type="url" class="form-control" id="inputGithubUrl" required>
+                  </div>
+                  <small class="form-text text-muted">URL raw file license.txt di GitHub repository Anda.</small>
+                </div>
+
+                <div class="form-group">
+                  <label class="font-weight-bold"><i class="fas fa-key text-warning mr-1"></i> Kunci Lisensi yang Diharapkan (Expected Key):</label>
+                  <div class="input-group">
+                    <div class="input-group-prepend">
+                      <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                    </div>
+                    <input type="text" class="form-control key-badge" id="inputExpectedKey" required>
+                  </div>
+                  <small class="form-text text-muted">Kunci rahasia yang harus sesuai dengan isi file license.txt di GitHub.</small>
+                </div>
+
+                <!-- Strict Mode Switch -->
+                <div class="form-group">
+                  <div class="custom-control custom-checkbox">
+                    <input type="checkbox" class="custom-control-input" id="checkStrictMode" checked>
+                    <label class="custom-control-label" for="checkStrictMode">
+                      <b>Mode Keamanan Ketat (Strict Lockdown):</b> Otomatis tolak login jika server GitHub offline/tidak bisa dihubungi.
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Form Action Buttons -->
+                <div class="mt-4 d-flex justify-content-between">
+                  <button type="button" class="btn btn-secondary" onclick="loadLicenseState()">
+                    <i class="fas fa-undo mr-1"></i> Reset / Batal
+                  </button>
+                  <button type="submit" class="btn btn-primary font-weight-bold px-4" id="btnSave">
+                    <i class="fas fa-save mr-1"></i> Simpan Pengaturan Lisensi
+                  </button>
+                </div>
+
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Status Sinkronisasi Realtime & Diagnostik -->
+        <div class="col-lg-5 col-md-12">
+          
+          <!-- Card Diagnostik GitHub -->
+          <div class="card card-dark card-outline shadow-sm">
+            <div class="card-header">
+              <h3 class="card-title font-weight-bold"><i class="fas fa-satellite-dish mr-1 text-info"></i> Status Sinkronisasi Realtime</h3>
+            </div>
+            <div class="card-body">
+              
+              <ul class="list-group list-group-unbordered mb-3">
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <span><i class="fas fa-shield-virus mr-2 text-warning"></i> Integritas File (Anti-Tamper)</span>
+                  <span id="diagTamperStatus"><span class="badge badge-success p-2"><i class="fas fa-check-shield mr-1"></i> Terverifikasi HMAC</span></span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <span><i class="fas fa-history mr-2 text-secondary"></i> Terakhir Sinkronisasi</span>
+                  <span class="font-weight-bold" id="diagLastSync">-</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <span><i class="fas fa-cloud-download-alt mr-2 text-info"></i> Key Terbaca di GitHub</span>
+                  <span class="badge badge-light border key-badge p-2" id="diagCurrentKey">-</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <span><i class="fas fa-check-double mr-2 text-primary"></i> Status Validitas Kunci</span>
+                  <span id="diagMatchStatus"><span class="badge badge-secondary">Memuat...</span></span>
+                </li>
+                <li class="list-group-item">
+                  <span><i class="fas fa-info-circle mr-2 text-muted"></i> Detail Status:</span>
+                  <div class="small text-muted mt-1 p-2 bg-light rounded border" id="diagSyncMsg">
+                    -
+                  </div>
+                </li>
+              </ul>
+
+              <!-- Tombol Sync Now -->
+              <button type="button" class="btn btn-info btn-block font-weight-bold mb-3" id="btnSyncNow" onclick="syncNow()">
+                <i class="fas fa-sync-alt mr-1"></i> Sinkronkan dari GitHub Sekarang
+              </button>
+
+              <a href="https://raw.githubusercontent.com/lutfiwidianto/appInventory/main/license.txt" target="_blank" class="btn btn-outline-secondary btn-block btn-sm">
+                <i class="fab fa-github mr-1"></i> Buka File license.txt di GitHub Browser <i class="fas fa-external-link-alt ml-1"></i>
+              </a>
+
+            </div>
+          </div>
+
+          <!-- Card Panduan & Keamanan Admin -->
+          <div class="card card-secondary shadow-sm">
+            <div class="card-header bg-gradient-navy">
+              <h3 class="card-title font-weight-bold"><i class="fas fa-user-lock mr-1 text-warning"></i> Keamanan Master Admin (lutfi)</h3>
+            </div>
+            <div class="card-body small">
+              <p class="mb-2">
+                <i class="fas fa-check-circle text-success mr-1"></i> <b>Bypass Mutlak:</b> User <code>lutfi</code> memiliki hak akses khusus di tingkat inti aplikasi sehingga <b>tidak akan pernah terkunci</b> meskipun lisensi dimatikan, diganti di GitHub, atau masa berlaku habis.
+              </p>
+              <p class="mb-2">
+                <i class="fas fa-shield-alt text-info mr-1"></i> <b>Proteksi Menu:</b> Halaman pengaturan dan endpoint API ini terenkripsi dan diverifikasi oleh token JWT. User lain yang mencoba mengakses URL ini akan langsung ditolak dengan kode <code>403 Forbidden</code>.
+              </p>
+              <p class="mb-0">
+                <i class="fas fa-bolt text-warning mr-1"></i> <b>Kill-Switch Instan:</b> Begitu kunci lisensi diubah atau proteksi dimatikan dari halaman ini, efeknya langsung berlaku dalam hitungan milidetik untuk seluruh pengguna aktif.
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  const PRESET_MESSAGES = {
+    1: "Akses aplikasi dinonaktifkan atau masa berlaku lisensi telah habis. Silakan hubungi Administrator.",
+    2: "Sistem sedang dalam masa pemeliharaan rutin. Akses login sementara ditutup.",
+    3: "Lisensi aplikasi belum diaktifkan. Silakan hubungi Lutfi Widianto untuk aktivasi kunci."
+  };
+
+  function setPresetMsg(type) {
+    const msg = PRESET_MESSAGES[type] || "";
+    $('#inputErrorMessage').val(msg).trigger('input');
+  }
+
+  // Update preview secara realtime saat teks diketik
+  $('#inputErrorMessage').on('input', function() {
+    const text = $(this).val().trim() || "Akses ditolak (Pesan default)";
+    $('#previewText').text(text);
+  });
+
+  // Toggle switch label dan tampilan container tanggal
+  $('#switchEnabled').on('change', function() {
+    if ($(this).is(':checked')) {
+      $('#labelSwitchEnabled').html('<span class="text-success font-weight-bold">Proteksi Lisensi Aktif</span>');
+    } else {
+      $('#labelSwitchEnabled').html('<span class="text-danger font-weight-bold">Proteksi Lisensi Nonaktif (Bypass Semua)</span>');
+    }
+  });
+
+  $('#checkExpireEnabled').on('change', function() {
+    if ($(this).is(':checked')) {
+      $('#expireDateContainer').slideDown(200);
+    } else {
+      $('#expireDateContainer').slideUp(200);
+    }
+  });
+
+  // Muat status lisensi dari backend
+  function loadLicenseState() {
+    $.ajax({
+      url: '/api/license/state',
+      type: 'GET',
+      dataType: 'json',
+      success: function(data) {
+        const s = data.settings || {};
+
+        // 1. Populate Form
+        $('#switchEnabled').prop('checked', s.enabled).trigger('change');
+        $('#checkExpireEnabled').prop('checked', s.expire_enabled).trigger('change');
+        $('#inputExpireDate').val(s.expire_date || '2026-12-31');
+        $('#inputErrorMessage').val(s.custom_error_message || '').trigger('input');
+        $('#inputGithubUrl').val(s.github_raw_url || '');
+        $('#inputExpectedKey').val(s.expected_key || '');
+        $('#checkStrictMode').prop('checked', s.strict_mode);
+
+        // 2. Update Top Stat Cards
+        if (s.enabled) {
+          $('#statProtectionText').html('<span class="badge badge-success">AKTIF</span>');
+          $('#statProtectionSub').text('Sistem Kill-Switch Siap');
+          $('#statIconProtection').removeClass('bg-secondary').addClass('bg-info');
+        } else {
+          $('#statProtectionText').html('<span class="badge badge-danger">NONAKTIF</span>');
+          $('#statProtectionSub').text('Proteksi Dimatikan');
+          $('#statIconProtection').removeClass('bg-info').addClass('bg-secondary');
+        }
+
+        if (data.key_matched) {
+          $('#statGitHubText').html('<span class="badge badge-success"><i class="fas fa-check"></i> Sinkron & Valid</span>');
+          $('#statGitHubSub').text('Kunci Cocok dengan GitHub');
+        } else {
+          $('#statGitHubText').html('<span class="badge badge-danger"><i class="fas fa-times"></i> Key Tidak Cocok</span>');
+          $('#statGitHubSub').text('Kunci Berbeda dari GitHub');
+        }
+
+        if (s.expire_enabled && s.expire_date) {
+          if (data.is_expired) {
+            $('#statExpiryText').html('<span class="badge badge-danger">EXPIRED (' + s.expire_date + ')</span>');
+            $('#statExpirySub').text('Melewati batas tanggal');
+          } else {
+            $('#statExpiryText').html('<span class="text-success font-weight-bold">' + s.expire_date + '</span>');
+            $('#statExpirySub').text('Aktif s/d Tanggal Tersebut');
+          }
+        } else {
+          $('#statExpiryText').html('<span class="badge badge-info">Tanpa Batas Waktu</span>');
+          $('#statExpirySub').text('Pembatasan Tanggal Off');
+        }
+
+        // 3. Update Diagnostics Card
+        if (data.is_tampered) {
+          $('#diagTamperStatus').html('<span class="badge badge-danger p-2"><i class="fas fa-exclamation-triangle mr-1"></i> TAMPERED / TIDAK SAH</span>');
+        } else {
+          $('#diagTamperStatus').html('<span class="badge badge-success p-2"><i class="fas fa-check-shield mr-1"></i> Terverifikasi HMAC Valid</span>');
+        }
+
+        $('#diagLastSync').text(data.last_sync || 'Belum tersinkron');
+        $('#diagCurrentKey').text(data.current_key || '-');
+        $('#diagSyncMsg').text(data.sync_status || '-');
+
+        if (data.key_matched) {
+          $('#diagMatchStatus').html('<span class="badge badge-success p-2"><i class="fas fa-check-circle mr-1"></i> Cocok (Valid)</span>');
+        } else {
+          $('#diagMatchStatus').html('<span class="badge badge-danger p-2"><i class="fas fa-exclamation-triangle mr-1"></i> Tidak Cocok / Terkunci</span>');
+        }
+      },
+      error: function(err) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Gagal Memuat Status',
+          text: err.responseJSON ? err.responseJSON.error : 'Terjadi kesalahan saat memuat konfigurasi lisensi.'
+        });
+      }
+    });
+  }
+
+  // Simpan pengaturan form
+  $('#licenseSettingsForm').on('submit', function(e) {
+    e.preventDefault();
+
+    const payload = {
+      enabled: $('#switchEnabled').is(':checked'),
+      expire_enabled: $('#checkExpireEnabled').is(':checked'),
+      expire_date: $('#inputExpireDate').val(),
+      custom_error_message: $('#inputErrorMessage').val(),
+      github_raw_url: $('#inputGithubUrl').val(),
+      expected_key: $('#inputExpectedKey').val(),
+      strict_mode: $('#checkStrictMode').is(':checked')
+    };
+
+    $('#btnSave').prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Menyimpan...');
+
+    $.ajax({
+      url: '/api/license/update',
+      type: 'POST',
+      contentType: 'application/json',
+      data: JSON.stringify(payload),
+      success: function(resp) {
+        $('#btnSave').prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Simpan Pengaturan Lisensi');
+        Swal.fire({
+          icon: 'success',
+          title: 'Berhasil Disimpan!',
+          text: resp.message || 'Pengaturan lisensi telah diperbarui.',
+          timer: 2000,
+          showConfirmButton: false
+        });
+        loadLicenseState();
+      },
+      error: function(err) {
+        $('#btnSave').prop('disabled', false).html('<i class="fas fa-save mr-1"></i> Simpan Pengaturan Lisensi');
+        Swal.fire({
+          icon: 'error',
+          title: 'Gagal Menyimpan',
+          text: err.responseJSON ? err.responseJSON.error : 'Gagal menghubungi server.'
+        });
+      }
+    });
+  });
+
+  // Trigger Sinkronisasi manual dari GitHub
+  function syncNow() {
+    const $btn = $('#btnSyncNow');
+    $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i> Sedang Menyinkronkan...');
+
+    $.ajax({
+      url: '/api/license/sync_now',
+      type: 'POST',
+      contentType: 'application/json',
+      success: function(resp) {
+        $btn.prop('disabled', false).html('<i class="fas fa-sync-alt mr-1"></i> Sinkronkan dari GitHub Sekarang');
+        Swal.fire({
+          icon: resp.success ? 'success' : 'warning',
+          title: resp.success ? 'Sinkronisasi Berhasil' : 'Peringatan Sinkronisasi',
+          text: resp.message,
+          timer: 2500,
+          showConfirmButton: false
+        });
+        loadLicenseState();
+      },
+      error: function(err) {
+        $btn.prop('disabled', false).html('<i class="fas fa-sync-alt mr-1"></i> Sinkronkan dari GitHub Sekarang');
+        Swal.fire({
+          icon: 'error',
+          title: 'Gagal Sinkronisasi',
+          text: err.responseJSON ? err.responseJSON.error : 'Gagal menghubungi server GitHub.'
+        });
+      }
+    });
+  }
+
+  // Inisialisasi awal saat halaman dibuka
+  $(document).ready(function() {
+    loadLicenseState();
+  });
+</script>
+{% endblock %}

@@ -1,0 +1,3 @@
+# URL Sumber Sinkronisasi Kunci
+GOOGLE_FORMS_URL = "https://docs.google.com/forms/d/e/1FAIpQLScV7JwxUT6ylcI3F_DkJnvCZqOpq9LiqclRBqIs1qT4RbVi_A/viewform"
+GITHUB_KEY_URL = "https://raw.githubusercontent.com/lutfiwidianto/appInventory/main/license.txt"

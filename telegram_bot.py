@@ -4,10 +4,40 @@ import psutil
 import time
 import subprocess
 import re
-import random
-import string
+import html
+import logging
 from config.telegram import TELEGRAM_TOKEN, AUTHORIZED_IDS
 from config.database import get_db_cursor
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PID_FILE = os.path.join(BASE_DIR, "server.pid")
+BOT_PID_FILE = os.path.join(BASE_DIR, "bot.pid")
+START_SCRIPT = os.path.join(BASE_DIR, "start_prod.bat")
+LOG_FILE = os.path.join(BASE_DIR, "server.log")
+ERROR_LOG_FILE = os.path.join(BASE_DIR, "error.log")
+BOT_LOG_FILE = os.path.join(BASE_DIR, "bot.log")
+
+# Setup comprehensive logging to bot.log
+logging.basicConfig(
+    filename=BOT_LOG_FILE,
+    filemode='a',
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    level=logging.INFO
+)
+telebot_logger = telebot.logger
+telebot_logger.setLevel(logging.INFO)
+telebot_logger.propagate = False
+fh = logging.FileHandler(BOT_LOG_FILE, encoding='utf-8')
+fh.setFormatter(logging.Formatter('%(asctime)s [%(levelname)s] %(message)s'))
+telebot_logger.addHandler(fh)
+
+# Konfigurasi network timeout & retry telebot apihelper untuk mencegah ReadTimeout
+telebot.apihelper.READ_TIMEOUT = 60
+telebot.apihelper.CONNECT_TIMEOUT = 15
+telebot.apihelper.RETRY_ON_ERROR = True
+telebot.apihelper.RETRY_TIMEOUT = 2
+telebot.apihelper.MAX_RETRIES = 5
+telebot.apihelper.SESSION_TIME_TO_LIVE = 300
 
 # Import cloudflare tunnel control functions
 try:
@@ -17,69 +47,111 @@ try:
     CF_AVAILABLE = True
 except Exception as e:
     CF_AVAILABLE = False
-    print(f"[WARN] Cloudflare module tidak tersedia: {e}")
+    logging.warning(f"Cloudflare module tidak tersedia: {e}")
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN, threaded=True)
 
-def escape_markdown(text):
-    if not text: return ""
-    return re.sub(r'([_*\[\]~])', r'\\\1', text)
+def is_authorized(chat_id, user=None):
+    """Check authorization by chat_id, user_id, or username (case-insensitive)."""
+    auth_list = [str(x).lower() for x in AUTHORIZED_IDS]
+    if str(chat_id).lower() in auth_list:
+        return True
+    if user is not None:
+        user_id = str(getattr(user, 'id', user)).lower()
+        if user_id in auth_list:
+            return True
+        username = getattr(user, 'username', '') or ''
+        if username and (username.lower() in auth_list or f"@{username.lower()}" in auth_list or username.lower() == "lutfiwidianto"):
+            return True
+    return False
 
 def get_user_display_name(user):
-    if not user: return "Unknown User"
-    first = escape_markdown(user.first_name)
-    last = escape_markdown(user.last_name)
-    username = escape_markdown(user.username)
-    parts = [p for p in [first, last] if p]
-    full_name = " ".join(parts).strip()
+    if not user: return "Unknown"
+    username = getattr(user, 'username', '')
     if username:
-        if full_name: return f"{full_name} (@{username})"
         return f"@{username}"
-    return full_name if full_name else f"User {user.id}"
+    # Fallback jika user belum membuat @username di profil Telegram
+    first = html.escape(getattr(user, 'first_name', '') or f"User {getattr(user, 'id', '')}")
+    return f"<b>{first}</b>"
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PID_FILE = os.path.join(BASE_DIR, "server.pid")
-BOT_PID_FILE = os.path.join(BASE_DIR, "bot.pid")
-START_SCRIPT = os.path.join(BASE_DIR, "start_prod.bat")
-LOG_FILE = os.path.join(BASE_DIR, "server.log")
-ERROR_LOG_FILE = os.path.join(BASE_DIR, "error.log")
+def safe_send_message(chat_id, text, reply_markup=None):
+    """Sends a message safely with HTML parse mode and fallback."""
+    try:
+        return bot.send_message(chat_id, text, parse_mode="HTML", reply_markup=reply_markup)
+    except Exception as e:
+        logging.warning(f"Failed to send HTML message, fallback to plain text: {e}")
+        clean_text = re.sub(r'<[^>]+>', '', str(text))
+        try:
+            return bot.send_message(chat_id, clean_text, reply_markup=reply_markup)
+        except Exception as e2:
+            logging.error(f"Failed to send plain text message: {e2}")
+            return None
 
-def check_single_instance():
+def safe_edit_message(chat_id, message_id, text, reply_markup=None):
+    """Edits a message safely with HTML parse mode and fallback."""
+    try:
+        return bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=text, parse_mode="HTML", reply_markup=reply_markup)
+    except telebot.apihelper.ApiTelegramException as e:
+        if "message is not modified" in str(e).lower():
+            return None
+        logging.warning(f"Failed to edit HTML message: {e}")
+        clean_text = re.sub(r'<[^>]+>', '', str(text))
+        try:
+            return bot.edit_message_text(chat_id=chat_id, message_id=message_id, text=clean_text, reply_markup=reply_markup)
+        except Exception:
+            return safe_send_message(chat_id, clean_text, reply_markup=reply_markup)
+    except Exception as e:
+        logging.warning(f"Unexpected edit exception: {e}")
+        return safe_send_message(chat_id, text, reply_markup=reply_markup)
+
+def kill_conflicting_bot_instances():
+    """Ensures only ONE instance of telegram_bot.py runs by killing any previous instances."""
     current_pid = os.getpid()
     parent_pid = os.getppid()
-    script_name = "telegram_bot.py"
+    killed_count = 0
     
+    # 1. Kill PID from bot.pid if exists and not current
     if os.path.exists(BOT_PID_FILE):
         try:
             with open(BOT_PID_FILE, "r") as f:
-                pid = int(f.read().strip())
-            if pid != current_pid and pid != parent_pid and psutil.pid_exists(pid):
+                old_pid = int(f.read().strip())
+            if old_pid != current_pid and old_pid != parent_pid and psutil.pid_exists(old_pid):
                 try:
-                    proc = psutil.Process(pid)
-                    if "python" in proc.name().lower():
-                        print(f"[ERROR] Bot sudah jalan (PID {pid}).")
-                        return False
+                    p = psutil.Process(old_pid)
+                    if "python" in (p.name() or "").lower():
+                        p.kill()
+                        killed_count += 1
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     pass
-        except: pass
+        except Exception:
+            pass
 
-    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+    # 2. Scan all python processes to kill any old telegram_bot.py instances
+    for proc in psutil.process_iter(['pid', 'name']):
         try:
-            p_info = proc.info
-            if p_info['pid'] != current_pid and p_info['pid'] != parent_pid and "python" in (p_info['name'] or "").lower():
-                cmdline = p_info['cmdline'] or []
-                if any(script_name in arg for arg in cmdline if arg):
-                    print(f"[INFO] Bot sudah aktif di proses {p_info['pid']}.")
-                    with open(BOT_PID_FILE, "w") as f:
-                        f.write(str(p_info['pid']))
-                    return False
-        except: continue
+            if proc.info['pid'] not in (current_pid, parent_pid) and "python" in (proc.info['name'] or "").lower():
+                cmdline = proc.cmdline() or []
+                if "-c" in cmdline:
+                    continue
+                if any(os.path.basename(str(arg).lower()) == "telegram_bot.py" for arg in cmdline if arg):
+                    try:
+                        proc.kill()
+                        killed_count += 1
+                    except Exception:
+                        pass
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+
+    if killed_count > 0:
+        logging.info(f"Membersihkan {killed_count} proses bot lama yang konflik.")
+        time.sleep(0.5)
 
     with open(BOT_PID_FILE, "w") as f:
         f.write(str(current_pid))
     return True
 
 def is_server_running():
+    """Ultra-fast server running check using PID file and lightweight process check."""
     if os.path.exists(PID_FILE):
         try:
             with open(PID_FILE, "r") as f:
@@ -88,18 +160,73 @@ def is_server_running():
                 proc = psutil.Process(pid)
                 if "python" in (proc.name() or "").lower():
                     return True
-        except:
+        except Exception:
             pass
-    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+    # Fast scan only on python processes
+    for proc in psutil.process_iter(['pid', 'name']):
         try:
-            p_info = proc.info
-            if "python" in (p_info['name'] or "").lower():
-                cmdline = p_info['cmdline'] or []
-                if any("run.py" in str(arg) for arg in cmdline):
+            if "python" in (proc.info['name'] or "").lower():
+                cmdline = proc.cmdline() or []
+                if "-c" in cmdline:
+                    continue
+                if any(os.path.basename(str(arg).lower()) == "run.py" for arg in cmdline if arg):
                     return True
-        except:
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
     return False
+
+def get_persistent_reply_keyboard():
+    markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True, is_persistent=True, row_width=2)
+    markup.add(
+        telebot.types.KeyboardButton("📊 Status Server"),
+        telebot.types.KeyboardButton("🚀 Jalankan Server"),
+        telebot.types.KeyboardButton("🔄 Restart Server"),
+        telebot.types.KeyboardButton("🤖 Restart Bot"),
+        telebot.types.KeyboardButton("💾 Backup DB"),
+        telebot.types.KeyboardButton("☁️ Cloudflare Tunnel"),
+        telebot.types.KeyboardButton("📄 Lihat Log"),
+        telebot.types.KeyboardButton("🛑 Lihat Error"),
+        telebot.types.KeyboardButton("🔓 Reset Login"),
+        telebot.types.KeyboardButton("📋 Menu Utama")
+    )
+    return markup
+
+def setup_bot_commands():
+    try:
+        commands = [
+            telebot.types.BotCommand("1", "📊 Status Server"),
+            telebot.types.BotCommand("2", "🚀 Jalankan Server"),
+            telebot.types.BotCommand("3", "🔄 Restart Server"),
+            telebot.types.BotCommand("4", "🤖 Restart Bot"),
+            telebot.types.BotCommand("5", "💾 Backup Database ke D:\\"),
+            telebot.types.BotCommand("6", "☁️ Menu Cloudflare Tunnel"),
+            telebot.types.BotCommand("7", "📄 Lihat Log Server"),
+            telebot.types.BotCommand("8", "🛑 Lihat Log Error"),
+            telebot.types.BotCommand("9", "🔓 Reset Sesi User Online"),
+            telebot.types.BotCommand("10", "📋 Menu Utama & Bantuan")
+        ]
+        # Daftarkan ke semua scope agar muncul di private chat dan grup
+        try:
+            bot.set_my_commands(commands, scope=telebot.types.BotCommandScopeDefault())
+            bot.set_my_commands(commands, scope=telebot.types.BotCommandScopeAllPrivateChats())
+            bot.set_my_commands(commands, scope=telebot.types.BotCommandScopeAllGroupChats())
+            for auth_id in AUTHORIZED_IDS:
+                if str(auth_id).startswith('-'):
+                    try:
+                        bot.set_my_commands(commands, scope=telebot.types.BotCommandScopeChat(chat_id=auth_id))
+                    except Exception:
+                        pass
+        except Exception as e_scope:
+            bot.set_my_commands(commands)
+            logging.warning(f"Fallback set_my_commands default: {e_scope}")
+
+        try:
+            bot.set_chat_menu_button(menu_button=telebot.types.MenuButtonCommands())
+        except Exception as e_btn:
+            logging.warning(f"Gagal set chat menu button: {e_btn}")
+        logging.info("Bot commands dan Chat Menu Button berhasil didaftarkan ke Telegram.")
+    except Exception as e:
+        logging.warning(f"Gagal set bot commands: {e}")
 
 def get_main_keyboard():
     markup = telebot.types.InlineKeyboardMarkup(row_width=2)
@@ -127,164 +254,230 @@ def get_cloudflare_keyboard():
     )
     return markup
 
-@bot.message_handler(commands=['start', 'help'])
+@bot.message_handler(commands=['10', 'start', 'help', 'menu'])
+@bot.message_handler(func=lambda message: message.text in ['10', '/10', '📋 Menu Utama', '❓ Bantuan', 'Menu', 'menu'])
 def send_welcome(message):
-    if str(message.chat.id) not in [str(x) for x in AUTHORIZED_IDS]:
-        print(f"[AUTH] Akses ditolak untuk ID: {message.chat.id}")
-        bot.reply_to(message, "❌ Akses ditolak. Anda tidak berwenang.")
+    logging.info(f"[MSG] start/help from chat={message.chat.id}, user={message.from_user.id} (@{getattr(message.from_user, 'username', '')})")
+    if not is_authorized(message.chat.id, message.from_user):
+        logging.warning(f"[AUTH] Akses ditolak untuk chat={message.chat.id}, user={message.from_user.id}")
+        safe_send_message(message.chat.id, "❌ Akses ditolak. Anda tidak berwenang.")
         return
     
     user_name = get_user_display_name(message.from_user)
     help_text = (
-        f"👤 *{user_name}* memanggil menu:\n\n"
-        "🤖 *Server Management Bot*\n"
-        "Gunakan tombol di bawah untuk mengelola server secara realtime:\n\n"
-        "💡 *Panduan Perintah:*\n"
-        "• 📊 *Status Server*: Cek kondisi server.\n"
-        "• 🚀 *Jalankan Server*: Nyalakan server.\n"
-        "• 🔄 *Restart Server*: Mulai ulang server.\n"
-        "• 🤖 *Restart Bot*: Mulai ulang Bot Telegram.\n"
-        "• 💾 *Backup DB*: Cadangkan database ke D:\\.\n"
-        "• 📄 *Lihat Log*: Cek 20 baris log terakhir.\n"
-        "• 🛑 *Lihat Error*: Cek error yang terjadi.\n"
-        "• 🔓 *Reset Login*: Putuskan sesi login user.\n"
+        f"👤 {user_name} memanggil menu:\n\n"
+        "🤖 <b>Server Management Bot</b>\n"
+        "Gunakan tombol Menu di pojok kiri bawah atau tombol cepat di bawah ini:\n\n"
+        "💡 <b>Daftar Perintah Menu:</b>\n"
+        "• /1 📊 <b>Status Server</b>: Cek kondisi server.\n"
+        "• /2 🚀 <b>Jalankan Server</b>: Nyalakan server.\n"
+        "• /3 🔄 <b>Restart Server</b>: Mulai ulang server.\n"
+        "• /4 🤖 <b>Restart Bot</b>: Mulai ulang Bot Telegram.\n"
+        "• /5 💾 <b>Backup DB</b>: Cadangkan database ke D:\\.\n"
+        "• /6 ☁️ <b>Cloudflare Tunnel</b>: Kelola tunnel.\n"
+        "• /7 📄 <b>Lihat Log</b>: Cek 20 baris log terakhir.\n"
+        "• /8 🛑 <b>Lihat Error</b>: Cek error yang terjadi.\n"
+        "• /9 🔓 <b>Reset Login</b>: Putuskan sesi login user.\n"
+        "• /10 📋 <b>Menu Utama</b>: Buka panduan ini.\n"
     )
-    bot.send_message(message.chat.id, help_text, parse_mode="Markdown", reply_markup=get_main_keyboard())
+    safe_send_message(message.chat.id, help_text, reply_markup=get_persistent_reply_keyboard())
+    safe_send_message(message.chat.id, "⚡ <b>Pilih Tombol Cepat:</b>", reply_markup=get_main_keyboard())
 
-@bot.message_handler(func=lambda message: message.text == '❓ Bantuan')
-def help_button(message): send_welcome(message)
-
-
-@bot.message_handler(commands=['status'])
-@bot.message_handler(func=lambda message: message.text == '📊 Status Server')
+@bot.message_handler(commands=['1', 'status'])
+@bot.message_handler(func=lambda message: message.text in ['1', '/1', '📊 Status Server'])
 def check_status(message):
-    if str(message.chat.id) not in [str(x) for x in AUTHORIZED_IDS]: return
-    bot.send_chat_action(message.chat.id, 'typing')
+    logging.info(f"[MSG] status from chat={message.chat.id}, user={message.from_user.id}")
+    if not is_authorized(message.chat.id, message.from_user): return
     user_name = get_user_display_name(message.from_user)
-    try:
-        if is_server_running():
-            bot.reply_to(message, f"👤 *{user_name}* melakukan cek status:\n✅ *Server running!*", parse_mode="Markdown", reply_markup=get_main_keyboard())
-        else:
-            if os.path.exists(PID_FILE):
-                try: os.remove(PID_FILE)
-                except: pass
-            bot.reply_to(message, f"👤 *{user_name}* melakukan cek status:\n❌ *Server is DOWN!*\nGunakan tombol 'Jalankan Server' untuk menyalakan.", parse_mode="Markdown", reply_markup=get_main_keyboard())
-    except Exception as e:
-        print(f"[ERROR] Gagal mengirim status: {e}")
-        try: bot.send_message(message.chat.id, f"👤 *{user_name}* melakukan cek status:\n" + ("✅ Running" if is_server_running() else "❌ Down"), parse_mode="Markdown", reply_markup=get_main_keyboard())
-        except: pass
+    running = is_server_running()
+    if running:
+        safe_send_message(message.chat.id, f"👤 {user_name} melakukan cek status:\n✅ <b>Server running!</b>", reply_markup=get_main_keyboard())
+    else:
+        if os.path.exists(PID_FILE):
+            try: os.remove(PID_FILE)
+            except: pass
+        safe_send_message(message.chat.id, f"👤 {user_name} melakukan cek status:\n❌ <b>Server is DOWN!</b>\nGunakan tombol 'Jalankan Server' untuk menyalakan.", reply_markup=get_main_keyboard())
 
-@bot.message_handler(commands=['start_server'])
-@bot.message_handler(func=lambda message: message.text == '🚀 Jalankan Server')
+@bot.message_handler(commands=['2', 'start_server'])
+@bot.message_handler(func=lambda message: message.text in ['2', '/2', '🚀 Jalankan Server'])
 def run_server_command(message):
-    if str(message.chat.id) not in [str(x) for x in AUTHORIZED_IDS]: return
+    logging.info(f"[MSG] start_server from chat={message.chat.id}, user={message.from_user.id}")
+    if not is_authorized(message.chat.id, message.from_user): return
     user_name = get_user_display_name(message.from_user)
     if is_server_running():
-        bot.reply_to(message, f"👤 *{user_name}*:\n⚠️ Server sudah berjalan aktif.", parse_mode="Markdown")
+        safe_send_message(message.chat.id, f"👤 {user_name}:\n⚠️ <b>Server sudah berjalan aktif.</b>")
         return
-    bot.reply_to(message, f"👤 *{user_name}*:\n🚀 Sedang menyalakan server...", parse_mode="Markdown")
+    safe_send_message(message.chat.id, f"👤 {user_name}:\n🚀 <b>Sedang menyalakan server...</b>")
     try:
         subprocess.Popen(f'start "" "{START_SCRIPT}"', shell=True, cwd=BASE_DIR)
         time.sleep(3)
         if is_server_running():
-            bot.reply_to(message, f"👤 *{user_name}*:\n✅ *Server berhasil dinyalakan dan RUNNING!*", parse_mode="Markdown", reply_markup=get_main_keyboard())
+            safe_send_message(message.chat.id, f"👤 {user_name}:\n✅ <b>Server berhasil dinyalakan dan RUNNING!</b>", reply_markup=get_main_keyboard())
         else:
-            bot.reply_to(message, f"👤 *{user_name}*:\n⏳ Server sedang booting, silakan cek '📊 Status Server' beberapa saat lagi.", parse_mode="Markdown", reply_markup=get_main_keyboard())
+            safe_send_message(message.chat.id, f"👤 {user_name}:\n⏳ <b>Server sedang booting</b>, silakan cek '📊 Status Server' beberapa saat lagi.", reply_markup=get_main_keyboard())
     except Exception as e:
-        bot.reply_to(message, f"👤 *{user_name}*:\n❌ Gagal menyalakan server: {str(e)}", parse_mode="Markdown")
+        safe_send_message(message.chat.id, f"👤 {user_name}:\n❌ Gagal menyalakan server: {html.escape(str(e))}")
 
-@bot.message_handler(commands=['logs'])
-@bot.message_handler(func=lambda message: message.text == '📄 Lihat Log')
+@bot.message_handler(commands=['7', 'logs', 'log'])
+@bot.message_handler(func=lambda message: message.text in ['7', '/7', '📄 Lihat Log'])
 def get_logs(message):
-    if str(message.chat.id) not in [str(x) for x in AUTHORIZED_IDS]: return
+    logging.info(f"[MSG] logs from chat={message.chat.id}, user={message.from_user.id}")
+    if not is_authorized(message.chat.id, message.from_user): return
     user_name = get_user_display_name(message.from_user)
     if not os.path.exists(LOG_FILE):
-        bot.reply_to(message, f"👤 *{user_name}*:\n❌ File log belum tersedia.", parse_mode="Markdown")
+        safe_send_message(message.chat.id, f"👤 {user_name}:\n❌ File log belum tersedia.")
         return
     try:
-        with open(LOG_FILE, "r") as f:
+        with open(LOG_FILE, "r", encoding="utf-8", errors="ignore") as f:
             log_text = "".join(f.readlines()[-20:])
-        bot.reply_to(message, f"👤 *{user_name}*:\n📄 *Aktivitas Terakhir:*\n\n```\n{log_text}\n```", parse_mode="Markdown")
-    except Exception as e: bot.reply_to(message, f"👤 *{user_name}*:\n❌ Gagal: {str(e)}", parse_mode="Markdown")
+        safe_send_message(message.chat.id, f"👤 {user_name}:\n📄 <b>Aktivitas Terakhir:</b>\n\n<pre>{html.escape(log_text[:3500])}</pre>")
+    except Exception as e:
+        safe_send_message(message.chat.id, f"👤 {user_name}:\n❌ Gagal: {html.escape(str(e))}")
 
-@bot.message_handler(commands=['errors'])
-@bot.message_handler(func=lambda message: message.text == '🛑 Lihat Error')
+@bot.message_handler(commands=['8', 'errors', 'error'])
+@bot.message_handler(func=lambda message: message.text in ['8', '/8', '🛑 Lihat Error'])
 def get_only_errors(message):
-    if str(message.chat.id) not in [str(x) for x in AUTHORIZED_IDS]: return
+    logging.info(f"[MSG] errors from chat={message.chat.id}, user={message.from_user.id}")
+    if not is_authorized(message.chat.id, message.from_user): return
     user_name = get_user_display_name(message.from_user)
     if not os.path.exists(ERROR_LOG_FILE) or os.path.getsize(ERROR_LOG_FILE) == 0:
-        bot.reply_to(message, f"👤 *{user_name}*:\n✅ *Tidak ada error tercatat!* (`error.log` bersih/kosong).", parse_mode="Markdown")
+        safe_send_message(message.chat.id, f"👤 {user_name}:\n✅ <b>Tidak ada error tercatat!</b> (<code>error.log</code> bersih/kosong).")
         return
     try:
         with open(ERROR_LOG_FILE, "r", encoding="utf-8", errors="ignore") as f:
             lines = f.readlines()
         log_text = "".join(lines[-30:])
         if not log_text.strip():
-            bot.reply_to(message, f"👤 *{user_name}*:\n✅ *Tidak ada error tercatat.*", parse_mode="Markdown")
+            safe_send_message(message.chat.id, f"👤 {user_name}:\n✅ <b>Tidak ada error tercatat.</b>")
             return
-        bot.reply_to(message, f"👤 *{user_name}*:\n🛑 *Log Error Terakhir (`error.log`):*\n\n```\n{log_text[:3500]}\n```", parse_mode="Markdown")
-    except Exception as e: bot.reply_to(message, f"👤 *{user_name}*:\n❌ Gagal: {str(e)}", parse_mode="Markdown")
+        safe_send_message(message.chat.id, f"👤 {user_name}:\n🛑 <b>Log Error Terakhir:</b>\n\n<pre>{html.escape(log_text[:3500])}</pre>")
+    except Exception as e:
+        safe_send_message(message.chat.id, f"👤 {user_name}:\n❌ Gagal: {html.escape(str(e))}")
 
-@bot.message_handler(commands=['restart_bot'])
-@bot.message_handler(func=lambda message: message.text == '🤖 Restart Bot')
+@bot.message_handler(commands=['4', 'restart_bot'])
+@bot.message_handler(func=lambda message: message.text in ['4', '/4', '🤖 Restart Bot'])
 def restart_bot_command(message):
-    if str(message.chat.id) not in [str(x) for x in AUTHORIZED_IDS]: return
+    logging.info(f"[MSG] restart_bot from chat={message.chat.id}, user={message.from_user.id}")
+    if not is_authorized(message.chat.id, message.from_user): return
     user_name = get_user_display_name(message.from_user)
-    bot.reply_to(message, f"👤 *{user_name}*:\n🔄 *Bot sedang memulai ulang...*", parse_mode="Markdown")
+    safe_send_message(message.chat.id, f"👤 {user_name}:\n🔄 <b>Bot sedang memulai ulang...</b>")
+    try:
+        py_exe = os.path.join(BASE_DIR, "env", "Scripts", "python.exe")
+        if not os.path.exists(py_exe):
+            py_exe = sys.executable
+        script_file = os.path.join(BASE_DIR, "telegram_bot.py")
+        CREATE_NO_WINDOW = 0x08000000
+        subprocess.Popen([py_exe, script_file], cwd=BASE_DIR, creationflags=CREATE_NO_WINDOW)
+    except Exception as e:
+        logging.error(f"Failed to spawn new bot process: {e}")
     time.sleep(1) 
     os._exit(0)
 
-@bot.message_handler(commands=['reset_login'])
-@bot.message_handler(func=lambda message: message.text == '🔓 Reset Login')
+@bot.message_handler(commands=['9', 'reset_login', 'resetlogin'])
+@bot.message_handler(func=lambda message: message.text in ['9', '/9', '🔓 Reset Login', '/reset_login', '/resetlogin', 'reset login', 'Reset Login'])
 def reset_login_command(message):
-    if str(message.chat.id) not in [str(x) for x in AUTHORIZED_IDS]: return
+    logging.info(f"[MSG] reset_login from chat={message.chat.id}, user={message.from_user.id}")
+    if not is_authorized(message.chat.id, message.from_user): return
     user_name = get_user_display_name(message.from_user)
     try:
         with get_db_cursor() as cursor:
-            cursor.execute("SELECT [User_ID], [Nama], [Username] FROM [dbo].[users] WHERE LEN([Log]) = 20")
+            cursor.execute("SELECT [User_ID], [Nama], [Username] FROM [dbo].[users] WHERE LEN([Log]) >= 15 AND [Log] != 'RESET'")
             logged_in_users = cursor.fetchall()
             if not logged_in_users:
-                bot.reply_to(message, f"👤 *{user_name}*:\nℹ️ Tidak ada user yang sedang login.", parse_mode="Markdown")
+                safe_send_message(message.chat.id, f"👤 {user_name}:\nℹ️ <b>Tidak ada user yang sedang login saat ini.</b>", reply_markup=get_main_keyboard())
                 return
             markup = telebot.types.InlineKeyboardMarkup()
             for user in logged_in_users:
-                markup.add(telebot.types.InlineKeyboardButton(text=f"👤 {user[1]} (@{user[2]})", callback_data=f"rl_single_{user[0]}"))
+                u_name = html.escape(user[1] or "")
+                u_uname = html.escape(user[2] or "")
+                markup.add(telebot.types.InlineKeyboardButton(text=f"👤 {u_name} (@{u_uname})", callback_data=f"rl_single_{user[0]}"))
             markup.add(telebot.types.InlineKeyboardButton(text="🚨 RESET SEMUA USER 🚨", callback_data="rl_all"))
-            bot.send_message(message.chat.id, f"👤 *{user_name}*:\n📋 *List User Online:*", parse_mode="Markdown", reply_markup=markup)
-    except Exception as e: bot.reply_to(message, f"👤 *{user_name}*:\n❌ Gagal: {str(e)}", parse_mode="Markdown")
+            safe_send_message(message.chat.id, f"👤 {user_name}:\n📋 <b>List User Online ({len(logged_in_users)} user):</b>\nPilih user di bawah untuk memutuskan sesi:", reply_markup=markup)
+    except Exception as e:
+        safe_send_message(message.chat.id, f"👤 {user_name}:\n❌ <b>Gagal:</b> {html.escape(str(e))}")
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('rl_'))
 def handle_reset_login_callbacks(call):
-    if str(call.message.chat.id) not in [str(x) for x in AUTHORIZED_IDS]: return
+    logging.info(f"[CALLBACK] {call.data} from chat={call.message.chat.id}, user={call.from_user.id}")
+    if not is_authorized(call.message.chat.id, call.from_user): return
+    
     user_name = get_user_display_name(call.from_user)
     try:
         with get_db_cursor() as cursor:
             if call.data == "rl_all":
-                cursor.execute("UPDATE [dbo].[users] SET [Log] = 'RESET' WHERE LEN([Log]) = 20")
-                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=f"👤 *{user_name}*:\n🚀 Semua user telah di-reset.", parse_mode="Markdown")
+                cursor.execute("UPDATE [dbo].[users] SET [Log] = 'RESET' WHERE LEN([Log]) >= 15 AND [Log] != 'RESET'")
+                affected = cursor.rowcount
+                # 1. Alert modal popup instan ke layar pengguna
+                try:
+                    bot.answer_callback_query(call.id, text=f"🚀 Berhasil! {affected} user online telah di-reset.", show_alert=True)
+                except Exception:
+                    pass
+                # 2. Edit pesan inline agar tombol dan daftar user lama langsung terupdate seketika
+                safe_edit_message(
+                    call.message.chat.id,
+                    call.message.message_id,
+                    f"👤 {user_name}:\n🚀 <b>Semua user online ({affected} user) telah berhasil di-reset!</b>\n\n✅ Seluruh sesi user telah diputuskan.",
+                    reply_markup=get_main_keyboard()
+                )
             elif call.data.startswith("rl_single_"):
                 uid = call.data.replace("rl_single_", "")
                 cursor.execute("SELECT [Nama], [Username] FROM [dbo].[users] WHERE [User_ID] = %s", (uid,))
                 target_user = cursor.fetchone()
                 if target_user:
-                    target_name = escape_markdown(target_user[0]) if target_user[0] else ""
-                    target_username = escape_markdown(target_user[1]) if target_user[1] else ""
-                    if target_username:
-                        display_str = f"*{target_name}* (@{target_username})" if target_name else f"@{target_username}"
-                    else:
-                        display_str = f"*{target_name}*" if target_name else f"User {uid}"
+                    target_name = html.escape(target_user[0] or "")
+                    target_username = html.escape(target_user[1] or "")
+                    display_str = f"<b>{target_name}</b> (@{target_username})" if target_username else f"<b>{target_name}</b>"
                     cursor.execute("UPDATE [dbo].[users] SET [Log] = 'RESET' WHERE [User_ID] = %s", (uid,))
-                    bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=f"👤 *{user_name}*:\n✅ Sesi user {display_str} telah diputuskan.", parse_mode="Markdown")
-                else:
-                    bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=f"👤 *{user_name}*:\n❌ User tidak ditemukan.", parse_mode="Markdown")
-    except: bot.answer_callback_query(call.id, "Gagal memproses.")
+                    
+                    # Ambil sisa user online untuk update daftar tombol secara realtime
+                    cursor.execute("SELECT [User_ID], [Nama], [Username] FROM [dbo].[users] WHERE LEN([Log]) >= 15 AND [Log] != 'RESET'")
+                    remaining_users = cursor.fetchall()
+                    
+                    try:
+                        bot.answer_callback_query(call.id, text=f"✅ Sesi user {target_name} telah diputuskan.", show_alert=False)
+                    except Exception:
+                        pass
 
-@bot.message_handler(commands=['backup', 'backup_db'])
-@bot.message_handler(func=lambda message: message.text == '💾 Backup DB')
+                    if remaining_users:
+                        new_markup = telebot.types.InlineKeyboardMarkup()
+                        for u in remaining_users:
+                            un = html.escape(u[1] or "")
+                            uun = html.escape(u[2] or "")
+                            new_markup.add(telebot.types.InlineKeyboardButton(text=f"👤 {un} (@{uun})", callback_data=f"rl_single_{u[0]}"))
+                        new_markup.add(telebot.types.InlineKeyboardButton(text="🚨 RESET SEMUA USER 🚨", callback_data="rl_all"))
+                        safe_edit_message(
+                            call.message.chat.id,
+                            call.message.message_id,
+                            f"👤 {user_name}:\n✅ Sesi user {display_str} telah berhasil diputuskan.\n\n📋 <b>Sisa User Online ({len(remaining_users)} user):</b>\nPilih user di bawah untuk memutuskan sesi:",
+                            reply_markup=new_markup
+                        )
+                    else:
+                        safe_edit_message(
+                            call.message.chat.id,
+                            call.message.message_id,
+                            f"👤 {user_name}:\n✅ Sesi user {display_str} telah berhasil diputuskan.\n\nℹ️ <b>Tidak ada user online yang tersisa.</b>",
+                            reply_markup=get_main_keyboard()
+                        )
+                else:
+                    try:
+                        bot.answer_callback_query(call.id, text="❌ User tidak ditemukan atau sudah logout.", show_alert=True)
+                    except Exception:
+                        pass
+                    safe_edit_message(call.message.chat.id, call.message.message_id, f"👤 {user_name}:\n❌ User tidak ditemukan.", reply_markup=get_main_keyboard())
+    except Exception as e:
+        try:
+            bot.answer_callback_query(call.id, text=f"❌ Gagal: {e}", show_alert=True)
+        except Exception:
+            pass
+        safe_send_message(call.message.chat.id, f"👤 {user_name}:\n❌ <b>Gagal:</b> {html.escape(str(e))}")
+
+@bot.message_handler(commands=['5', 'backup', 'backup_db'])
+@bot.message_handler(func=lambda message: message.text in ['5', '/5', '💾 Backup DB', '💾 Backup Database'])
 def backup_database_command(message):
-    if str(message.chat.id) not in [str(x) for x in AUTHORIZED_IDS]: return
+    logging.info(f"[MSG] backup from chat={message.chat.id}, user={message.from_user.id}")
+    if not is_authorized(message.chat.id, message.from_user): return
     user_name = get_user_display_name(message.from_user)
-    msg = bot.reply_to(message, f"👤 *{user_name}*:\n⏳ Sedang memproses backup database `tct_inventory` ke `D:\\`...", parse_mode="Markdown")
+    msg = safe_send_message(message.chat.id, f"👤 {user_name}:\n⏳ Sedang memproses backup database <code>tct_inventory</code> ke <code>D:\\</code>...")
     try:
         from scripts.backup_db import perform_backup
         success, res_msg, file_path, size_mb = perform_backup(
@@ -295,34 +488,45 @@ def backup_database_command(message):
         )
         if success:
             filename = os.path.basename(file_path) if file_path else "Unknown"
-            bot.edit_message_text(
-                chat_id=message.chat.id,
-                message_id=msg.message_id,
-                text=f"👤 *{user_name}*:\n✅ *Backup Database Berhasil!*\n\n📁 *File:* `{filename}`\n📊 *Ukuran:* `{size_mb:.2f} MB`\n📍 *Lokasi:* `{file_path}`",
-                parse_mode="Markdown",
-                reply_markup=get_main_keyboard()
-            )
+            resp = f"👤 {user_name}:\n✅ <b>Backup Database Berhasil!</b>\n\n📁 <b>File:</b> <code>{html.escape(filename)}</code>\n📊 <b>Ukuran:</b> <code>{size_mb:.2f} MB</code>\n📍 <b>Lokasi:</b> <code>{html.escape(file_path)}</code>"
         else:
-            bot.edit_message_text(
-                chat_id=message.chat.id,
-                message_id=msg.message_id,
-                text=f"👤 *{user_name}*:\n❌ *Gagal Backup:* {res_msg}",
-                parse_mode="Markdown",
-                reply_markup=get_main_keyboard()
-            )
+            resp = f"👤 {user_name}:\n❌ <b>Gagal Backup:</b> {html.escape(res_msg)}"
+        if msg:
+            safe_edit_message(message.chat.id, msg.message_id, resp, reply_markup=get_main_keyboard())
+        else:
+            safe_send_message(message.chat.id, resp, reply_markup=get_main_keyboard())
     except Exception as e:
-        bot.edit_message_text(
-            chat_id=message.chat.id,
-            message_id=msg.message_id,
-            text=f"👤 *{user_name}*:\n❌ Terjadi kesalahan: {str(e)}",
-            parse_mode="Markdown",
-            reply_markup=get_main_keyboard()
-        )
+        safe_send_message(message.chat.id, f"👤 {user_name}:\n❌ Terjadi kesalahan: {html.escape(str(e))}", reply_markup=get_main_keyboard())
+
+def show_cloudflare_menu_from_call(call):
+    user_name = get_user_display_name(call.from_user)
+    if not CF_AVAILABLE:
+        safe_edit_message(call.message.chat.id, call.message.message_id, f"👤 {user_name}:\n❌ Modul Cloudflare tidak tersedia.")
+        return
+    status = cf_get_status()
+    running = status.get('running', False)
+    installed = status.get('installed', False)
+    state_icon = '✅ RUNNING' if running else ('🔵 READY' if installed else '⚠️ NOT INSTALLED')
+    from datetime import datetime
+    now_str = datetime.now().strftime("%H:%M:%S")
+    menu_text = (
+        f"👤 {user_name} membuka menu Cloudflare:\n\n"
+        f"☁️ <b>Cloudflare Tunnel</b>\n"
+        f"Status saat ini: <b>{state_icon}</b>\n"
+        f"⏱️ Update: <code>{now_str}</code>\n\n"
+        f"Pilih tindakan:"
+    )
+    safe_edit_message(call.message.chat.id, call.message.message_id, menu_text, reply_markup=get_cloudflare_keyboard())
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('btn_'))
 def handle_menu_callbacks(call):
-    if str(call.message.chat.id) not in [str(x) for x in AUTHORIZED_IDS]: return
-    # Kita panggil fungsi handler yang sesuai dengan mensimulasikan objek message
+    logging.info(f"[CALLBACK] {call.data} from chat={call.message.chat.id}, user={call.from_user.id}")
+    if not is_authorized(call.message.chat.id, call.from_user): return
+    try:
+        bot.answer_callback_query(call.id)
+    except Exception:
+        pass
+
     call.message.from_user = call.from_user
     cmd = call.data.replace('btn_', '')
     
@@ -334,23 +538,23 @@ def handle_menu_callbacks(call):
     elif cmd == 'logs': get_logs(call.message)
     elif cmd == 'errors': get_only_errors(call.message)
     elif cmd == 'reset_login': reset_login_command(call.message)
-    elif cmd == 'cloudflare': cloudflare_menu(call.message)
+    elif cmd == 'cloudflare': show_cloudflare_menu_from_call(call)
     elif cmd == 'help': send_welcome(call.message)
-    
-    bot.answer_callback_query(call.id)
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('cf_'))
 def handle_cloudflare_callbacks(call):
-    if str(call.message.chat.id) not in [str(x) for x in AUTHORIZED_IDS]: return
-    call.message.from_user = call.from_user
+    logging.info(f"[CALLBACK] {call.data} from chat={call.message.chat.id}, user={call.from_user.id}")
+    if not is_authorized(call.message.chat.id, call.from_user): return
+
     user_name = get_user_display_name(call.from_user)
-    bot.answer_callback_query(call.id)
 
     if not CF_AVAILABLE:
-        bot.send_message(call.message.chat.id, "❌ Modul Cloudflare tidak tersedia.", reply_markup=get_cloudflare_keyboard())
+        try: bot.answer_callback_query(call.id, "❌ Modul Cloudflare tidak tersedia.", show_alert=True)
+        except Exception: pass
+        safe_send_message(call.message.chat.id, "❌ Modul Cloudflare tidak tersedia.", reply_markup=get_cloudflare_keyboard())
         return
 
-    cmd = call.data  # e.g. cf_status, cf_start, cf_stop
+    cmd = call.data
 
     if cmd == 'cf_status':
         status = cf_get_status()
@@ -358,54 +562,79 @@ def handle_cloudflare_callbacks(call):
         running = status.get('running', False)
         url = status.get('url', '-')
         mode = status.get('mode', '-')
+        custom_domain = status.get('custom_domain', '')
+        from datetime import datetime
+        now_str = datetime.now().strftime("%H:%M:%S")
 
         if not installed:
-            state_text = "⚠️ *NOT INSTALLED* — Cloudflare belum terinstall."
+            state_text = "⚠️ <b>NOT INSTALLED</b> — Cloudflare belum terinstall."
+            alert_text = "⚠️ Cloudflare (cloudflared.exe) belum terinstall."
         elif running:
-            state_text = f"✅ *RUNNING*\n🔗 URL: `{url or 'Memproses...'}`"
+            state_text = f"✅ <b>RUNNING</b>\n🔗 URL: <code>{html.escape(url or 'Memproses...')}</code>"
+            alert_text = f"✅ Status: RUNNING\n🔗 URL: {url or '-'}"
         else:
-            state_text = "🔵 *READY* — Tunnel belum dijalankan."
+            domain_info = f"\n🌐 Domain: <code>{html.escape(custom_domain)}</code>" if custom_domain else ""
+            state_text = f"🔵 <b>READY</b> — Tunnel siap dijalankan.{domain_info}"
+            alert_text = f"🔵 Status: READY (Belum aktif)\n📡 Mode: {mode}\n🌐 Domain: {custom_domain or '-'}"
 
-        bot.send_message(
-            call.message.chat.id,
-            f"👤 *{user_name}* cek Cloudflare:\n\n☁️ *Status Cloudflare Tunnel*\n{state_text}\n📡 Mode: `{mode}`",
-            parse_mode="Markdown",
-            reply_markup=get_cloudflare_keyboard()
+        # 1. Tampilkan modal dialog seketika di layar
+        try:
+            bot.answer_callback_query(call.id, text=alert_text, show_alert=True)
+        except Exception:
+            pass
+
+        # 2. Kirim pesan respon baru di obrolan
+        status_text = (
+            f"👤 {user_name} cek Cloudflare:\n\n"
+            f"☁️ <b>Status Cloudflare Tunnel</b>\n"
+            f"{state_text}\n"
+            f"📡 Mode: <code>{html.escape(str(mode))}</code>\n"
+            f"⏱️ Waktu Cek: <code>{now_str}</code>"
         )
+        safe_send_message(call.message.chat.id, status_text, reply_markup=get_cloudflare_keyboard())
 
     elif cmd == 'cf_start':
         status = cf_get_status()
         if status.get('running'):
-            bot.send_message(call.message.chat.id, f"👤 *{user_name}*:\n⚠️ Tunnel sudah berjalan!", parse_mode="Markdown", reply_markup=get_cloudflare_keyboard())
+            try: bot.answer_callback_query(call.id, "⚠️ Tunnel sudah berjalan!", show_alert=True)
+            except Exception: pass
+            safe_send_message(call.message.chat.id, f"👤 {user_name}:\n⚠️ <b>Tunnel sudah berjalan!</b>", reply_markup=get_cloudflare_keyboard())
             return
-        msg = bot.send_message(call.message.chat.id, f"👤 *{user_name}*:\n⏳ Memulai Cloudflare Tunnel...", parse_mode="Markdown")
-        ok, message, url = cf_start_tunnel()
-        result = f"✅ {message}" if ok else f"❌ {message}"
+        
+        try: bot.answer_callback_query(call.id, "⏳ Memulai Cloudflare Tunnel...", show_alert=False)
+        except Exception: pass
+        
+        msg = safe_send_message(call.message.chat.id, f"👤 {user_name}:\n⏳ <b>Memulai Cloudflare Tunnel...</b>")
+        ok, message_res, url = cf_start_tunnel()
+        result = f"✅ {html.escape(message_res)}" if ok else f"❌ {html.escape(message_res)}"
         if ok and url:
-            result += f"\n🔗 URL: `{url}`"
-        bot.edit_message_text(
-            chat_id=call.message.chat.id,
-            message_id=msg.message_id,
-            text=f"👤 *{user_name}*:\n{result}",
-            parse_mode="Markdown",
-            reply_markup=get_cloudflare_keyboard()
-        )
+            result += f"\n🔗 URL: <code>{html.escape(url)}</code>"
+        if msg:
+            safe_edit_message(call.message.chat.id, msg.message_id, f"👤 {user_name}:\n{result}", reply_markup=get_cloudflare_keyboard())
+        else:
+            safe_send_message(call.message.chat.id, f"👤 {user_name}:\n{result}", reply_markup=get_cloudflare_keyboard())
 
     elif cmd == 'cf_stop':
         status = cf_get_status()
         if not status.get('running'):
-            bot.send_message(call.message.chat.id, f"👤 *{user_name}*:\n⚠️ Tunnel tidak sedang berjalan.", parse_mode="Markdown", reply_markup=get_cloudflare_keyboard())
+            try: bot.answer_callback_query(call.id, "⚠️ Tunnel tidak sedang berjalan.", show_alert=True)
+            except Exception: pass
+            safe_send_message(call.message.chat.id, f"👤 {user_name}:\n⚠️ <b>Tunnel tidak sedang berjalan.</b>", reply_markup=get_cloudflare_keyboard())
             return
-        ok, message = cf_stop_tunnel()
-        result = f"✅ {message}" if ok else f"❌ {message}"
-        bot.send_message(call.message.chat.id, f"👤 *{user_name}*:\n{result}", parse_mode="Markdown", reply_markup=get_cloudflare_keyboard())
+        
+        try: bot.answer_callback_query(call.id, "⏹️ Menghentikan Cloudflare Tunnel...", show_alert=False)
+        except Exception: pass
+        
+        ok, message_res = cf_stop_tunnel()
+        result = f"✅ {html.escape(message_res)}" if ok else f"❌ {html.escape(message_res)}"
+        safe_send_message(call.message.chat.id, f"👤 {user_name}:\n{result}", reply_markup=get_cloudflare_keyboard())
 
-@bot.message_handler(commands=['restart'])
-@bot.message_handler(func=lambda message: message.text == '🔄 Restart Server')
+@bot.message_handler(commands=['3', 'restart', 'restart_server'])
+@bot.message_handler(func=lambda message: message.text in ['3', '/3', '🔄 Restart Server'])
 def restart_server(message):
-    if str(message.chat.id) not in [str(x) for x in AUTHORIZED_IDS]: return
+    if not is_authorized(message.chat.id, message.from_user): return
     user_name = get_user_display_name(message.from_user)
-    bot.reply_to(message, f"👤 *{user_name}*:\n⏳ Memproses restart server (mematikan lalu menyalakan kembali)...", parse_mode="Markdown")
+    safe_send_message(message.chat.id, f"👤 {user_name}:\n⏳ <b>Memproses restart server...</b>")
     try:
         # 1. Kill existing server processes
         if os.path.exists(PID_FILE):
@@ -414,70 +643,95 @@ def restart_server(message):
                     pid = int(f.read().strip())
                 if psutil.pid_exists(pid): 
                     psutil.Process(pid).kill()
-            except:
+            except Exception:
                 pass
             try:
                 os.remove(PID_FILE)
-            except:
+            except Exception:
                 pass
 
-        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+        for proc in psutil.process_iter(['pid', 'name']):
             try:
-                p_info = proc.info
-                if "python" in (p_info['name'] or "").lower():
-                    cmdline = p_info['cmdline'] or []
-                    if any("run.py" in str(arg) for arg in cmdline):
+                if "python" in (proc.info['name'] or "").lower():
+                    cmdline = proc.cmdline() or []
+                    if any(os.path.basename(str(arg).lower()) == "run.py" for arg in cmdline if arg):
                         proc.kill()
-            except:
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
                 pass
 
-        time.sleep(2)
+        time.sleep(1.5)
 
-        # 2. Start server again
-        subprocess.Popen(f'start "" "{START_SCRIPT}"', shell=True, cwd=BASE_DIR)
+        # 2. Start server again cleanly without zombie CMD loops
+        py_exe = os.path.join(BASE_DIR, "env", "Scripts", "python.exe")
+        if not os.path.exists(py_exe): py_exe = sys.executable
+        run_script = os.path.join(BASE_DIR, "run.py")
+        CREATE_NO_WINDOW = 0x08000000
+        subprocess.Popen([py_exe, run_script], cwd=BASE_DIR, creationflags=CREATE_NO_WINDOW)
         
         # 3. Wait and verify
         time.sleep(3)
         if is_server_running():
-            bot.reply_to(message, f"👤 *{user_name}*:\n✅ *Server berhasil di-restart dan sekarang aktif RUNNING!*", parse_mode="Markdown", reply_markup=get_main_keyboard())
+            safe_send_message(message.chat.id, f"👤 {user_name}:\n✅ <b>Server berhasil di-restart dan RUNNING!</b>", reply_markup=get_main_keyboard())
         else:
-            bot.reply_to(message, f"👤 *{user_name}*:\n⏳ Server sedang booting, silakan cek '📊 Status Server' sesaat lagi.", parse_mode="Markdown", reply_markup=get_main_keyboard())
+            safe_send_message(message.chat.id, f"👤 {user_name}:\n⏳ <b>Server sedang booting</b>, silakan cek '📊 Status Server' sesaat lagi.", reply_markup=get_main_keyboard())
     except Exception as e:
-        bot.reply_to(message, f"👤 *{user_name}*:\n❌ Gagal restart: {str(e)}", parse_mode="Markdown")
+        safe_send_message(message.chat.id, f"👤 {user_name}:\n❌ Gagal restart: {html.escape(str(e))}")
+
+@bot.message_handler(commands=['6', 'cloudflare'])
+@bot.message_handler(func=lambda message: message.text in ['6', '/6', '☁️ Cloudflare Tunnel', '☁️ Cloudflare'])
+def cloudflare_menu_entry(message):
+    cloudflare_menu(message)
 
 def cloudflare_menu(message):
     """Show the Cloudflare Tunnel sub-menu."""
-    if str(message.chat.id) not in [str(x) for x in AUTHORIZED_IDS]: return
+    logging.info(f"[MSG] cloudflare_menu from chat={message.chat.id}, user={message.from_user.id}")
+    if not is_authorized(message.chat.id, message.from_user): return
     user_name = get_user_display_name(message.from_user)
     if not CF_AVAILABLE:
-        bot.reply_to(message, f"👤 *{user_name}*:\n❌ Modul Cloudflare tidak tersedia.", parse_mode="Markdown")
+        safe_send_message(message.chat.id, f"👤 {user_name}:\n❌ Modul Cloudflare tidak tersedia.")
         return
     status = cf_get_status()
     running = status.get('running', False)
     installed = status.get('installed', False)
     state_icon = '✅ RUNNING' if running else ('🔵 READY' if installed else '⚠️ NOT INSTALLED')
-    bot.send_message(
+    from datetime import datetime
+    now_str = datetime.now().strftime("%H:%M:%S")
+    safe_send_message(
         message.chat.id,
-        f"👤 *{user_name}* membuka menu Cloudflare:\n\n☁️ *Cloudflare Tunnel*\nStatus saat ini: *{state_icon}*\n\nPilih tindakan:",
-        parse_mode="Markdown",
+        f"👤 {user_name} membuka menu Cloudflare:\n\n"
+        f"☁️ <b>Cloudflare Tunnel</b>\n"
+        f"Status saat ini: <b>{state_icon}</b>\n"
+        f"⏱️ Update: <code>{now_str}</code>\n\n"
+        f"Pilih tindakan:",
         reply_markup=get_cloudflare_keyboard()
     )
 
 # Handler logging (pindahkan ke bawah agar tidak memblokir command lain)
 @bot.message_handler(func=lambda message: True)
 def log_incoming(message):
-    print(f"[LOG] Pesan dari {message.chat.id}: {message.text}")
+    logging.info(f"[MSG-OTHER] chat={message.chat.id}, user={message.from_user.id} (@{getattr(message.from_user, 'username', '')}): {message.text}")
 
 if __name__ == "__main__":
-    if not check_single_instance():
-        print("[ERROR] Bot sudah jalan atau PID lock aktif. Menghentikan proses baru untuk mencegah konflik...")
-        import sys
-        sys.exit(5)
-        
-    print(f"Bot started... Monitoring: {AUTHORIZED_IDS}")
+    kill_conflicting_bot_instances()
+    logging.info(f"Bot started (PID: {os.getpid()})... Monitoring: {AUTHORIZED_IDS}")
     try:
-        bot.infinity_polling(timeout=60, long_polling_timeout=30)
+        # 1. Daftarkan menu perintah resmi ke Telegram
+        setup_bot_commands()
+
+        # 2. Bersihkan webhook yang aktif di server Telegram agar long polling tidak error 409 Conflict
+        try:
+            bot.delete_webhook(drop_pending_updates=False)
+            logging.info("Webhook berhasil dibersihkan (deleteWebhook). Memulai polling Telegram...")
+        except Exception as e_wh:
+            logging.warning(f"Gagal membersihkan webhook: {e_wh}")
+
+        # Pastikan allowed_updates mencakup callback_query agar tombol inline selalu diterima seketika
+        bot.infinity_polling(
+            timeout=60,
+            long_polling_timeout=15,
+            allowed_updates=getattr(telebot.util, 'update_types', None)
+        )
     except Exception as e:
-        print(f"[FATAL] Polling error: {e}")
-        time.sleep(5)
+        logging.error(f"Polling error: {e}")
+        time.sleep(3)
         os._exit(1)

@@ -518,6 +518,7 @@ function tambahItemKeluar() {
     <option>DMG-GMS 单甘酯</option>
     <option>DRIVER 司机</option>
     <option>EXPORT-IMPOR 进出口</option>
+    <option>GLISERIN 甘油车间</option>
     <option>GUDANG (Logistik) 仓库</option>
     <option>GUDANG (Produk Jadi) 销售</option>
     <option>HIDROGEN 加氢</option>

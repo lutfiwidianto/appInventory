@@ -531,6 +531,7 @@ function tambahItemKeluar() {
     <option>PRODUKSI - HIDROGEN</option>
     <option>PRODUKSI - BOILER</option>
     <option>PRODUKSI - DMG/GMS</option>
+    <option>PRODUKSI - GLISERIN 甘油车间</option>
     <option>PRODUKSI - PACKAGING</option>
     <option>GENERAL</option>
     <option>GENERAL - HRD</option>

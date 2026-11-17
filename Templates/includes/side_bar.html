@@ -355,6 +355,15 @@
                  <p>Backup Database</p>
               </a>
             </li> 
+            {% if username and username|lower == 'lutfi' %}
+            <li class="nav-item">
+              <a href="{{url_for('license_admin_bp.license_settings_page')}}"
+                 class="nav-link {%  if submenu=='license_settings' %} active {% endif %}" style="margin-left: 10px;">
+                 <i class="fas fa-key nav-icon text-warning"></i>
+                 <p>License & Security</p>
+              </a>
+            </li>
+            {% endif %}
           </ul>
         </li>
       </ul>

@@ -33,7 +33,7 @@ def encode_auth_token(nama_lengkap, username, leveluser):
     except Exception as e:
         return str(e)
 
-from config.license import get_current_key, get_license_info, trigger_async_sync
+from config.license import get_current_key, get_license_full_state, trigger_async_sync, validate_license_for_user
 
 def get_key():
     return get_current_key()
@@ -44,7 +44,7 @@ def get_key_endpoint():
 
 @auth_bp.route('/api/license_status', methods=['GET'])
 def license_status_endpoint():
-    return jsonify(get_license_info())
+    return jsonify(get_license_full_state())
 
 @auth_bp.route('/api/sync_license', methods=['POST'])
 def sync_license_endpoint():
@@ -79,9 +79,10 @@ def login():
 
                     # Check credentials
                     if user and password_hash == user[3]:
-                        specific_value = get_key()
-                        if specific_value != "lutfiw1diant0":
-                            return jsonify({"success": False, "message": "Akses ditolak (invalid license key)"}), 403
+                        # Validasi Lisensi & Kill-Switch (User 'lutfi' otomatis di-bypass 100%)
+                        is_valid_license, license_msg = validate_license_for_user(username)
+                        if not is_valid_license:
+                            return jsonify({"success": False, "message": license_msg}), 403
 
                         # Cek apakah user sedang aktif di sesi lain (panjang 20)
                         user_log = str(user[6] or "")
@@ -133,9 +134,10 @@ def logindev():
                     user = cursor.fetchone()
 
                     if user and password_hash == user[3]:
-                        specific_value = get_key()
-                        if specific_value != "lutfiw1diant0":
-                            return jsonify({"success": False, "message": "Akses ditolak"}), 403
+                        # Validasi Lisensi & Kill-Switch (User 'lutfi' otomatis di-bypass 100%)
+                        is_valid_license, license_msg = validate_license_for_user(username)
+                        if not is_valid_license:
+                            return jsonify({"success": False, "message": license_msg}), 403
 
                         user_log = str(user[6] or "")
                         if len(user_log) != 20:

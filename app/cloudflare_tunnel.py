@@ -13,14 +13,60 @@ from config.secretKey import SECRET_KEY
 cloudflare_tunnel_bp = Blueprint('cloudflare_tunnel_bp', __name__)
 
 CONFIG_FILE = 'config/cloudflare_settings.json'
+RUNTIME_FILE = 'config/cloudflare_runtime.json'
 TUNNEL_PROCESS = None
 TUNNEL_URL = None
 TUNNEL_LOG = []
 CLOUDFLARED_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'bin', 'cloudflared.exe')
 
 # ─────────────────────────────────────────────
-# Helper: config
+# Helper: runtime info & config
 # ─────────────────────────────────────────────
+def get_runtime_info():
+    if os.path.exists(RUNTIME_FILE):
+        try:
+            with open(RUNTIME_FILE, 'r') as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+def save_runtime_info(info):
+    try:
+        with open(RUNTIME_FILE, 'w') as f:
+            json.dump(info, f, indent=4)
+    except Exception:
+        pass
+
+def clear_runtime_info():
+    if os.path.exists(RUNTIME_FILE):
+        try:
+            os.remove(RUNTIME_FILE)
+        except Exception:
+            pass
+
+def is_cloudflared_running():
+    global TUNNEL_PROCESS, TUNNEL_URL
+    if TUNNEL_PROCESS is not None and TUNNEL_PROCESS.poll() is None:
+        return True
+    
+    # Check runtime file for cross-process detection (Flask vs Telegram Bot)
+    runtime = get_runtime_info()
+    pid = runtime.get('pid')
+    if pid:
+        try:
+            import psutil
+            if psutil.pid_exists(pid):
+                proc = psutil.Process(pid)
+                if 'cloudflared' in (proc.name() or '').lower():
+                    if not TUNNEL_URL and runtime.get('url'):
+                        TUNNEL_URL = runtime.get('url')
+                    return True
+        except Exception:
+            pass
+        clear_runtime_info()
+    return False
+
 def is_cloudflared_installed():
     return os.path.exists(CLOUDFLARED_PATH)
 
@@ -40,8 +86,6 @@ def save_config(config):
 def decode_connector_token(token_str):
     """Decode the cloudflared connector token (base64 JSON) to extract account_id and tunnel_id."""
     try:
-        # The token is a base64-encoded JSON string (not a JWT)
-        # Add padding if needed
         padded = token_str + '=' * (-len(token_str) % 4)
         decoded = base64.b64decode(padded).decode('utf-8')
         data = json.loads(decoded)
@@ -64,12 +108,11 @@ def fetch_tunnel_url_from_api(account_id, tunnel_id, api_key):
                 'User-Agent': 'Mozilla/5.0'
             }
         )
-        with urllib.request.urlopen(req, timeout=10) as response:
+        with urllib.request.urlopen(req, timeout=5) as response:
             result = json.loads(response.read().decode('utf-8'))
         
         if result.get('success'):
             ingress = result.get('result', {}).get('config', {}).get('ingress', [])
-            # Get first non-catch-all rule
             for rule in ingress:
                 hostname = rule.get('hostname', '')
                 if hostname and hostname != '*':
@@ -101,6 +144,9 @@ def _read_stream(stream, stream_name):
                 if match and not TUNNEL_URL:
                     TUNNEL_URL = match.group(0)
                     print(f"[cloudflared] URL ditemukan: {TUNNEL_URL}")
+                    rt = get_runtime_info()
+                    rt['url'] = TUNNEL_URL
+                    save_runtime_info(rt)
     except Exception as e:
         print(f"Error reading tunnel {stream_name}: {e}")
 
@@ -113,20 +159,22 @@ def read_tunnel_output(process):
     t_stdout.start()
 
 # ─────────────────────────────────────────────
-# Standalone control functions (usable by Telegram bot)
+# Standalone control functions (usable by Telegram bot & Flask)
 # ─────────────────────────────────────────────
 def cf_get_status():
-    """Returns a dict with tunnel status info."""
+    """Returns a dict with tunnel status info in < 0.001s."""
     global TUNNEL_PROCESS, TUNNEL_URL
-    is_running = TUNNEL_PROCESS is not None and TUNNEL_PROCESS.poll() is None
-    if TUNNEL_PROCESS is not None and TUNNEL_PROCESS.poll() is not None:
-        TUNNEL_PROCESS = None
-        is_running = False
+    running = is_cloudflared_running()
     config = load_config()
+    runtime = get_runtime_info() if running else {}
+    current_url = TUNNEL_URL or runtime.get('url')
+    if not current_url and running and config.get('mode') == 'token':
+        current_url = config.get('custom_domain') or ''
+
     return {
-        "running": is_running,
+        "running": running,
         "installed": is_cloudflared_installed(),
-        "url": TUNNEL_URL if is_running else None,
+        "url": current_url if running else None,
         "mode": config.get('mode', 'quick'),
         "custom_domain": config.get('custom_domain', ''),
     }
@@ -135,8 +183,9 @@ def cf_start_tunnel():
     """Start the cloudflare tunnel. Returns (success: bool, message: str, url: str|None)."""
     global TUNNEL_PROCESS, TUNNEL_URL, TUNNEL_LOG
 
-    if TUNNEL_PROCESS is not None and TUNNEL_PROCESS.poll() is None:
-        return False, "Tunnel sudah berjalan.", TUNNEL_URL
+    if is_cloudflared_running():
+        status = cf_get_status()
+        return False, "Tunnel sudah berjalan.", status.get('url')
 
     if not is_cloudflared_installed():
         return False, "Cloudflare (cloudflared.exe) belum terinstall.", None
@@ -152,7 +201,6 @@ def cf_start_tunnel():
             if not config['token']:
                 return False, "Token belum diisi.", None
 
-            # Try to get URL from saved custom_domain first, or from API
             saved_domain = config.get('custom_domain', '')
             if saved_domain:
                 TUNNEL_URL = saved_domain
@@ -164,7 +212,6 @@ def cf_start_tunnel():
                         fetched = fetch_tunnel_url_from_api(account_id, tunnel_id, api_key)
                         if fetched:
                             TUNNEL_URL = fetched
-                            # Save back so next time it's available
                             config['custom_domain'] = fetched
                             save_config(config)
 
@@ -180,12 +227,16 @@ def cf_start_tunnel():
             creationflags=CREATE_NO_WINDOW
         )
 
+        save_runtime_info({
+            "pid": TUNNEL_PROCESS.pid,
+            "url": TUNNEL_URL,
+            "mode": config.get('mode', 'quick'),
+            "started_at": time.strftime("%Y-%m-%d %H:%M:%S")
+        })
+
         thread = threading.Thread(target=read_tunnel_output, args=(TUNNEL_PROCESS,))
         thread.daemon = True
         thread.start()
-
-        if config['mode'] == 'quick':
-            time.sleep(5)
 
         return True, "Tunnel berhasil dijalankan.", TUNNEL_URL
 
@@ -197,17 +248,47 @@ def cf_start_tunnel():
 def cf_stop_tunnel():
     """Stop the cloudflare tunnel. Returns (success: bool, message: str)."""
     global TUNNEL_PROCESS, TUNNEL_URL
+    stopped = False
     if TUNNEL_PROCESS is not None:
         try:
             TUNNEL_PROCESS.terminate()
-            TUNNEL_PROCESS.wait(timeout=3)
+            TUNNEL_PROCESS.wait(timeout=2)
         except Exception:
             try:
                 TUNNEL_PROCESS.kill()
-            except:
+            except Exception:
                 pass
         TUNNEL_PROCESS = None
-        TUNNEL_URL = None
+        stopped = True
+
+    runtime = get_runtime_info()
+    pid = runtime.get('pid')
+    if pid:
+        try:
+            import psutil
+            if psutil.pid_exists(pid):
+                p = psutil.Process(pid)
+                if 'cloudflared' in (p.name() or '').lower():
+                    p.kill()
+                    stopped = True
+        except Exception:
+            pass
+
+    try:
+        import psutil
+        for p in psutil.process_iter(['pid', 'name']):
+            if 'cloudflared' in (p.info['name'] or '').lower():
+                try:
+                    p.kill()
+                    stopped = True
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
+    TUNNEL_URL = None
+    clear_runtime_info()
+    if stopped:
         return True, "Tunnel berhasil dihentikan."
     return False, "Tunnel tidak sedang berjalan."
 

@@ -1,5 +1,6 @@
 {
     "mode": "token",
     "token": "eyJhIjoiODUxNjI0NTRiOWQ5ZTRmYzdhODJhOTQ1Y2ZjYTQ3NzIiLCJ0IjoiM2NkZmVkZWMtM2Y0NC00OGNhLTlmZGUtM2E0MWY4NTE0OTBjIiwicyI6IlpEVTNNalpsWkRJdE5tWXdOUzAwTWpVMExUa3lOekF0TXpOak1EUTFOV1V6TXpWaiJ9",
-    "custom_domain": "https://invtungcia.wush.my.id"
+    "custom_domain": "https://invtungcia.wush.my.id",
+    "api_key": ""
 }

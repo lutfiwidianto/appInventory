@@ -12,6 +12,7 @@ __pycache__/
 
 # Logs and runtime artifacts
 *.log
+*.log.*
 server.log
 error.log
 backup.log
@@ -45,3 +46,12 @@ Thumbs.db
 Desktop.ini
 desktop.ini
 .DS_Store
+
+# Secrets & credentials
+*secret*
+*.token
+github_tools/secret*
+
+secret_github.txt
+github_tools/
+

@@ -1,0 +1,10 @@
+{
+    "enabled": true,
+    "github_raw_url": "https://raw.githubusercontent.com/lutfiwidianto/appInventory/main/license.txt",
+    "expected_key": "lutfiw1diant0",
+    "expire_enabled": false,
+    "expire_date": "2026-12-31",
+    "custom_error_message": "Akses aplikasi dinonaktifkan atau masa berlaku lisensi telah habis. Silakan hubungi Administrator.",
+    "strict_mode": true,
+    "_signature": "7238954fd944a5b2d61c8e4ca4a7fce0850c4dba3c0d87ba0c839f7cdb43d21a"
+}

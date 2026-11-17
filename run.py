@@ -43,6 +43,7 @@ from app.wh_bj_keluar import wh_bj_keluar_bp
 from app.wh_bj_globalstock import wh_bj_globalstock_bp
 from app.cloudflare_tunnel import cloudflare_tunnel_bp
 from app.backup_db import backup_db_bp
+from app.license_admin import license_admin_bp
 
 # Buat Flask app
 app = Flask(__name__)
@@ -121,6 +122,7 @@ app.register_blueprint(wh_bj_keluar_bp)
 app.register_blueprint(wh_bj_globalstock_bp)
 app.register_blueprint(cloudflare_tunnel_bp)
 app.register_blueprint(backup_db_bp)
+app.register_blueprint(license_admin_bp)
 
 # ─── RBAC Context Processor ─────────────────────────────────────────────────
 # Auto-inject user_permissions ke SEMUA template secara aman.
