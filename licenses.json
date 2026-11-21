@@ -7,7 +7,7 @@
   "killSwitch": false,
   "relayHost": "168.110.195.113",
   "relayPort": 5406,
-  "updatedAt": "2026-11-21T01:30:37Z",
+  "updatedAt": "2026-11-21T01:31:29Z",
   "pendingRequests": [
     {
       "hwid": "AEGIS-4F8E-1190-AA20-PAB6",
@@ -174,8 +174,8 @@
       "location": "Kantor PMC",
       "ownerName": "@operator_pmc",
       "telegramId": "1243202492",
-      "expiryDate": "2026-12-05T01:30:37Z",
-      "approvedAt": "2026-11-21T01:30:37Z",
+      "expiryDate": "2026-12-05T01:31:29Z",
+      "approvedAt": "2026-11-21T01:31:29Z",
       "isVip": false,
       "isBanned": false,
       "status": "active",
@@ -200,7 +200,7 @@
       "computerName": "UNKNOWN",
       "ip": "-",
       "mac": "-",
-      "bannedAt": "2026-11-21T01:30:37Z",
+      "bannedAt": "2026-11-21T01:31:29Z",
       "reason": "Automated Penetration Test Flag"
     }
   ],
